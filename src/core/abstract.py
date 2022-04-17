@@ -5,12 +5,13 @@ from pydantic import BaseModel
 
 
 if TYPE_CHECKING:
-    from core.game import GameState
+    from src.core.game import GameState
 
 
 class GameStep(BaseModel, ABC):
+    @classmethod
     @abstractmethod
-    def run(self) -> Any:
+    def run(cls, *args, **kwargs) -> Any:
         raise NotImplementedError
 
 

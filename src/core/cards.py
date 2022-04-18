@@ -132,5 +132,5 @@ ALL_CARDS = [
     HEART_JACK,
     HEART_QUEEN,
     HEART_KING,
-    HEART_ACE
+    HEART_ACE,
 ]

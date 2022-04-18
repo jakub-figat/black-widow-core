@@ -3,8 +3,8 @@ from collections import defaultdict
 
 from src.core import cards
 from src.core.consts import USER
+from src.core.enums import GameStep
 from src.core.game import GameState
-from src.core.steps import ExchangeStep
 
 
 def _get_initial_decks(users: list[USER]) -> dict[USER, list[cards.Card]]:
@@ -32,8 +32,8 @@ def _get_first_player(decks: dict[USER, list[cards.Card]]) -> str:
 
 def get_initial_game_state(users: list[USER]) -> GameState:
     return GameState(
-        current_step=ExchangeStep,
+        current_step=GameStep.CARD_EXCHANGE,
         users=users,
         decks=_get_initial_decks(users),
-        scores=_get_initial_scores(users)
+        scores=_get_initial_scores(users),
     )

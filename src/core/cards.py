@@ -1,26 +1,28 @@
 from pydantic import BaseModel
 
+from src.core.exceptions import InvalidCardComparison
+
 
 class Card(BaseModel):
     identifier: str
 
     def __lt__(self, card: "Card") -> bool:
         name, value = self.identifier.split("_")
-        other_name, other_value = self.identifier.split("_")
+        other_name, other_value = card.identifier.split("_")
 
         if name != other_name:
-            raise ValueError("Cannot compare card values with different suits.")
+            raise InvalidCardComparison("Cannot compare card values with different suits.")
 
-        return value < other_value
+        return int(value) < int(other_value)
 
     def __gt__(self, card: "Card") -> bool:
         name, value = self.identifier.split("_")
-        other_name, other_value = self.identifier.split("_")
+        other_name, other_value = card.identifier.split("_")
 
         if name != other_name:
-            raise ValueError("Cannot compare card values with different suits.")
+            raise InvalidCardComparison("Cannot compare card values with different suits.")
 
-        return value > other_value
+        return int(value) > int(other_value)
 
 
 SPADE_2 = Card(identifier="SPADE_2")

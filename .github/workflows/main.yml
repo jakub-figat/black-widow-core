@@ -21,27 +21,14 @@ jobs:
       - name: Push image to container registry
         run: docker push ${{ env.IMAGE_TAG }}
 
-  check:
-    runs-on: ubuntu-latest
-    container:
-      image: ${{ env.IMAGE_TAG }}
-
-    steps:
       - name: Check code formatting
-        run: |
-          isort . --check
-          black . --check
+        run: docker run --rm ${{ env.IMAGE_TAG }} -c "isort . --check && black . --check"
 
       - name: Static code analysis
-        run: prospector .
+        run: docker run --rm ${{ env.IMAGE_TAG }} -c "prospector ."
 
-  test:
-    runs-on: ubuntu-latest
-    container:
-      image: ${{ env.IMAGE_TAG }}
-    steps:
       - name: Run unit tests
-        run: ./scripts/unit-test.sh
+        run: docker run --rm ${{ env.IMAGE_TAG }} -c "./scripts/unit-test.sh"
 
       - name: Run integration tests
-        run: ./scripts/integration-test.sh
+        run: docker run --rm ${{ env.IMAGE_TAG }} -c "./scripts/integration-test.sh"

@@ -42,7 +42,6 @@ def test_get_initial_decks_with_four_users() -> None:
     users = ["User_1", "User_2", "User_3", "User_4"]
     decks = get_initial_decks(users=users)
     user_1_cards, user_2_cards, user_3_cards, user_4_cards = decks.values()
-    all_cards = list(itertools.chain.from_iterable(decks.values()))
 
     assert len(decks) == 4
     assert len(set(decks)) == len(decks)

@@ -39,6 +39,6 @@ def test_cards_overloaded_lt(card_1: cards.Card, card_2: cards.Card, is_lower_th
 
 
 @pytest.mark.parametrize("card_1,card_2", [(cards.CLUB_2, cards.SPADE_ACE), (cards.HEART_QUEEN, cards.DIAMOND_2)])
-def test_cards_overloaded_gt_with_different_suits(card_1: cards.Card, card_2: cards.Card) -> None:
+def test_cards_overloaded_lt_with_different_suits(card_1: cards.Card, card_2: cards.Card) -> None:
     with pytest.raises(InvalidCardComparison):
         card_1.__lt__(card_2)

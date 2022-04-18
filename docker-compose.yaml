@@ -2,7 +2,10 @@ version: "3.8"
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        ENV: dev
     container_name: black_widow_app
     volumes:
       - ./:/app

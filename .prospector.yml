@@ -1,0 +1,9 @@
+strictness: medium
+test-warnings: true
+max-line-length: 119
+
+ignore-paths:
+  - env
+
+pylint:
+  run: true

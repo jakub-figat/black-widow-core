@@ -37,7 +37,8 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    container: ${{ env.IMAGE_TAG }}
+    container:
+      image: ${{ env.IMAGE_TAG }}
     steps:
       - name: Run unit tests
         run: ./scripts/unit-test.sh

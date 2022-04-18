@@ -26,7 +26,7 @@ class BaseDispatcher(BaseModel, ABC):
             )
 
     @abstractmethod
-    def dispatch_payload(self, payload: Payload) -> None:
+    def dispatch_payload(self, payload: Payload) -> "GameState":
         raise NotImplementedError
 
     @property

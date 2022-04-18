@@ -6,7 +6,13 @@ from src.core.consts import USER
 
 
 def get_initial_decks(users: list[USER]) -> dict[USER, list[cards.Card]]:
+    if len(users) not in (3, 4):
+        raise ValueError("Invalid number of players, should be 3 or 4.")
+
     all_cards = cards.ALL_CARDS[:]
+    if len(users) == 3:
+        all_cards.remove(cards.CLUB_2)
+
     random.shuffle(all_cards)
     decks = defaultdict(list)
     for index, card in enumerate(all_cards):
@@ -16,6 +22,9 @@ def get_initial_decks(users: list[USER]) -> dict[USER, list[cards.Card]]:
 
 
 def get_initial_scores(users: list[USER]) -> dict[USER, int]:
+    if len(users) not in (3, 4):
+        raise ValueError("Invalid number of players, only 3 or 4 players can play the game.")
+
     return {user: 0 for user in users}
 
 

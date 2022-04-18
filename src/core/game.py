@@ -37,6 +37,12 @@ class Game(BaseModel):
     state: GameState
     store: GameStateStore | GameStateAsyncStore
     settings: GameSettings
+    dispatcher_mapping: dict[GameStep, Type[BaseDispatcher]] = {
+        GameStep.CARD_EXCHANGE: CardExchangeDispatcher,
+        GameStep.FIRST_ROUND: FirstRoundDispatcher,
+        GameStep.IN_PROGRESS: InProgressDispatcher,
+        GameStep.FINISHED: FinishedDispatcher,
+    }
 
     @classmethod
     def start_game(
@@ -44,20 +50,12 @@ class Game(BaseModel):
     ) -> "Game":
         settings = GameSettings(max_score=max_score)
         state = GameState.get_initial_game_state(users=users)
-
         return cls(state=state, settings=settings, store=store)
 
     def dispatch(self, payload: Payload) -> None:
-        dispatcher_mapping: dict[GameStep, Type[BaseDispatcher]] = {
-            GameStep.CARD_EXCHANGE: CardExchangeDispatcher,
-            GameStep.FIRST_ROUND: FirstRoundDispatcher,
-            GameStep.IN_PROGRESS: InProgressDispatcher,
-            GameStep.FINISHED: FinishedDispatcher,
-        }
-
-        dispatcher = dispatcher_mapping[self.state.current_step](game_state=self.state)
+        dispatcher = self.dispatcher_mapping[self.state.current_step](game_state=self.state)
         dispatcher.validate_payload(payload=payload)
-        dispatcher.dispatch_payload(payload=payload)
+        self.state = dispatcher.dispatch_payload(payload=payload)
 
     def _load_state(self) -> None:
         self.state = self.store.load_game_state()

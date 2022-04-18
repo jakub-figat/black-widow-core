@@ -2,11 +2,13 @@ from typing import Type
 
 from pydantic import BaseModel, Field
 
-from src.core.abstract import GameStateAsyncStore, GameStateStore
+from src.core.abstract import BaseDispatcher, GameStateAsyncStore, GameStateStore
 from src.core.cards import Card
 from src.core.consts import USER
+from src.core.dispatchers import CardExchangeDispatcher, FinishedDispatcher, FirstRoundDispatcher, InProgressDispatcher
 from src.core.enums import GameStep
-from src.core.utils import get_initial_game_state
+from src.core.types import Payload
+from src.core.utils import get_initial_decks, get_initial_scores
 
 
 class GameSettings(BaseModel):
@@ -16,10 +18,19 @@ class GameSettings(BaseModel):
 
 class GameState(BaseModel):
     current_step: GameStep
-    current_player: USER | None = None
+    current_user: USER | None = None
     users: list[USER]
     scores: dict[USER, int]
     decks: dict[USER, list[Card]]
+
+    @classmethod
+    def get_initial_game_state(cls, users: list[USER]) -> "GameState":
+        return cls(
+            current_step=GameStep.CARD_EXCHANGE,
+            users=users,
+            decks=get_initial_decks(users),
+            scores=get_initial_scores(users),
+        )
 
 
 class Game(BaseModel):
@@ -32,9 +43,21 @@ class Game(BaseModel):
         cls, users: list[USER], store: GameStateStore | GameStateAsyncStore, max_score: int = 100
     ) -> "Game":
         settings = GameSettings(max_score=max_score)
-        state = get_initial_game_state(users=users)
+        state = GameState.get_initial_game_state(users=users)
 
         return cls(state=state, settings=settings, store=store)
+
+    def dispatch(self, payload: Payload) -> None:
+        dispatcher_mapping: dict[GameStep, Type[BaseDispatcher]] = {
+            GameStep.CARD_EXCHANGE: CardExchangeDispatcher,
+            GameStep.FIRST_ROUND: FirstRoundDispatcher,
+            GameStep.IN_PROGRESS: InProgressDispatcher,
+            GameStep.FINISHED: FinishedDispatcher,
+        }
+
+        dispatcher = dispatcher_mapping[self.state.current_step](game_state=self.state)
+        dispatcher.validate_payload(payload=payload)
+        dispatcher.dispatch_payload(payload=payload)
 
     def _load_state(self) -> None:
         self.state = self.store.load_game_state()

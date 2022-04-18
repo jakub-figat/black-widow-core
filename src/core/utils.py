@@ -3,11 +3,9 @@ from collections import defaultdict
 
 from src.core import cards
 from src.core.consts import USER
-from src.core.enums import GameStep
-from src.core.game import GameState
 
 
-def _get_initial_decks(users: list[USER]) -> dict[USER, list[cards.Card]]:
+def get_initial_decks(users: list[USER]) -> dict[USER, list[cards.Card]]:
     all_cards = cards.ALL_CARDS[:]
     random.shuffle(all_cards)
     decks = defaultdict(list)
@@ -17,23 +15,14 @@ def _get_initial_decks(users: list[USER]) -> dict[USER, list[cards.Card]]:
     return decks
 
 
-def _get_initial_scores(users: list[USER]) -> dict[USER, int]:
+def get_initial_scores(users: list[USER]) -> dict[USER, int]:
     return {user: 0 for user in users}
 
 
-def _get_first_player(decks: dict[USER, list[cards.Card]]) -> str:
+def get_first_player(decks: dict[USER, list[cards.Card]]) -> str:
     beginning_card = cards.CLUB_2 if len(decks) == 4 else cards.CLUB_3
     for user, user_cards in decks.items():
         if beginning_card in user_cards:
             return user
 
     raise ValueError("No user has Club 2/3 card, cannot determine first player.")
-
-
-def get_initial_game_state(users: list[USER]) -> GameState:
-    return GameState(
-        current_step=GameStep.CARD_EXCHANGE,
-        users=users,
-        decks=_get_initial_decks(users),
-        scores=_get_initial_scores(users),
-    )

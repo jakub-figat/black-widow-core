@@ -20,3 +20,5 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry install $(if [ "$ENV" = 'prod']; then echo '--no-dev'; fi) --no-interaction --no-ansi
 
 COPY . .
+
+RUN chmod +x ./scripts/unit-test.sh ./scripts/integration-test.sh

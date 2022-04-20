@@ -4,7 +4,7 @@ on:
   - pull_request
 
 env:
-  IMAGE_TAG: ${{ secrets.CONTAINER_REGISTRY }}/${{ github.sha }}
+  IMAGE_TAG: ${{ secrets.CONTAINER_REGISTRY }}:${{ github.sha }}
 
 
 jobs:

@@ -15,7 +15,7 @@ WORKDIR /app
 
 RUN pip install poetry=="$POETRY_VERSION"
 
-COPY pyproject.toml poetry.lock .
+COPY pyproject.toml poetry.lock ./
 
 RUN poetry install $(if [ "$ENV" = 'prod']; then echo '--no-dev'; fi) --no-interaction --no-ansi
 

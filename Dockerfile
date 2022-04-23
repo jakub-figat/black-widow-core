@@ -21,4 +21,4 @@ RUN poetry install $(if [ "$ENV" = 'prod']; then echo '--no-dev'; fi) --no-inter
 
 COPY . .
 
-RUN chmod +x ./scripts/unit-test.sh ./scripts/integration-test.sh
+RUN chmod +x -R ./scripts

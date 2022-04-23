@@ -1,21 +1,18 @@
-from typing import TYPE_CHECKING, Type
+from typing import Type
 
 from src.core.abstract import GameStep
 from src.core.cards import Card
 from src.core.consts import USER
 from src.core.exceptions import InvalidPayloadBody
+from src.core.state import GameState
 from src.core.types import CardExchangePayload, CardExchangeState, FirstRoundPayload, Payload
-
-
-if TYPE_CHECKING:
-    from src.core.game import GameState
 
 
 class FirstRoundStep(GameStep):
     def validate_payload(self, payload: FirstRoundPayload) -> None:
         pass
 
-    def dispatch_payload(self, payload: Payload) -> "GameState":
+    def dispatch_payload(self, payload: Payload) -> GameState:
         pass
 
     @property
@@ -47,7 +44,7 @@ class CardExchangeStep(GameStep):
             if card not in self.game_state.decks[payload.user]:
                 raise InvalidPayloadBody(f"User {payload.user} does not have card {card.identifier}")
 
-    def dispatch_payload(self, payload: CardExchangePayload) -> "GameState":
+    def dispatch_payload(self, payload: CardExchangePayload) -> GameState:
         self.local_state.cards_to_exchange[payload.user] = payload.cards
         if len(self.local_state) == len(self.game_state.users):
             new_state = self.game_state.copy(deep=True)

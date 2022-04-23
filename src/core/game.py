@@ -1,31 +1,15 @@
 from pydantic import BaseModel, Field
 
 from src.core.abstract import GameStateAsyncStore, GameStateStore, GameStep
-from src.core.cards import Card
 from src.core.consts import USER
+from src.core.state import GameState
 from src.core.steps import CardExchangeStep
-from src.core.types import Payload
-from src.core.utils import get_initial_decks, get_initial_scores
+from src.core.types import CardExchangeState, Payload
 
 
 class GameSettings(BaseModel):
     max_score: int = Field(default=100, gt=0)
     timeout: int = Field(default=60, gt=30)
-
-
-class GameState(BaseModel):
-    current_user: USER | None = None
-    users: list[USER]
-    scores: dict[USER, int]
-    decks: dict[USER, list[Card]]
-
-    @classmethod
-    def get_initial_game_state(cls, users: list[USER]) -> "GameState":
-        return cls(
-            users=users,
-            decks=get_initial_decks(users),
-            scores=get_initial_scores(users),
-        )
 
 
 class Game(BaseModel):
@@ -40,7 +24,7 @@ class Game(BaseModel):
     ) -> "Game":
         settings = GameSettings(max_score=max_score)
         state = GameState.get_initial_game_state(users=users)
-        step = CardExchangeStep(game_state=state)
+        step = CardExchangeStep(game_state=state, local_state=CardExchangeState())
         return cls(state=state, settings=settings, store=store, current_step=step)
 
     def dispatch(self, payload: Payload) -> None:

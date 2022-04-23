@@ -20,3 +20,7 @@ class InvalidUser(GameError):
 
 class InvalidPayloadType(GameError):
     pass
+
+
+class InvalidPayloadBody(GameError):
+    pass

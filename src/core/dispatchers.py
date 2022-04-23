@@ -1,10 +1,17 @@
 from typing import Type
 
 from src.core.abstract import BaseDispatcher
+from src.core.exceptions import InvalidPayloadBody
 from src.core.types import CardExchangePayload, FinishedPayload, FirstRoundPayload, InProgressPayload, Payload
 
 
 class CardExchangeDispatcher(BaseDispatcher):
+    def validate_payload(self, payload: CardExchangePayload) -> None:
+        super().validate_payload(payload=payload)
+        for card in payload.cards:
+            if card not in self.game_state.decks[payload.user]:
+                raise InvalidPayloadBody(f"User {payload.user} does not have card {card.identifier}")
+
     def dispatch_payload(self, payload: CardExchangePayload) -> None:
         pass
 

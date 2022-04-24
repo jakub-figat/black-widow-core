@@ -26,7 +26,7 @@ class GameStep(BaseModel, ABC):
                 f"Expected type '{self.payload_class.__name__}', received {payload.__class__.__name__}"
             )
 
-    def on_start(self) -> None:
+    def on_start(self) -> GameState:
         """Method called by Game class on next step when step is switched"""
 
     @abstractmethod

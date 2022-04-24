@@ -28,3 +28,7 @@ class CardExchangeState(BaseModel):
 class RoundState(BaseModel):
     cards_on_table: dict[USER, Card] = Field(default_factory=dict)
     table_suit: CardSuit | None = None
+
+
+class FinishedState(BaseModel):
+    users_ready: set = Field(default_factory=set)

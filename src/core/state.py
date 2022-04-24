@@ -18,3 +18,11 @@ class GameState(BaseModel):
             decks=get_initial_decks(users),
             scores=get_initial_scores(users),
         )
+
+    @classmethod
+    def from_state(cls, game_state: "GameState") -> "GameState":
+        return cls(
+            users=game_state.users,
+            scores=game_state.scores,
+            decks=get_initial_decks(users=game_state.users),
+        )

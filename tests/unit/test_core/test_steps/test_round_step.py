@@ -84,7 +84,7 @@ def test_validate_payload_raises_error_on_invalid_payload(
 
 
 def test_first_round_step_on_start_method(game_state_with_first_round: GameState) -> None:
-    step = FirstRoundStep(game_state=game_state_with_first_round, local_state=RoundState())
+    step = FirstRoundStep(game_state=game_state_with_first_round)
     new_state = step.on_start()
 
     assert new_state != game_state_with_first_round
@@ -101,7 +101,7 @@ def test_first_round_step_on_start_method(game_state_with_first_round: GameState
 
 
 def test_dispatch_payload_when_first_card_is_on_table(game_state_with_first_round: GameState) -> None:
-    step = FirstRoundStep(game_state=game_state_with_first_round, local_state=RoundState())
+    step = FirstRoundStep(game_state=game_state_with_first_round)
     step.on_start()
     new_state = step.dispatch_payload(payload=RoundPayload(user="user_3", card=cards.HEART_QUEEN))
 
@@ -119,7 +119,7 @@ def test_dispatch_payload_when_first_card_is_on_table(game_state_with_first_roun
 
 
 def test_dispatch_payload_when_last_card_is_being_put(game_state_with_current_player: GameState) -> None:
-    step = InProgressStep(game_state=game_state_with_current_player, local_state=RoundState())
+    step = InProgressStep(game_state=game_state_with_current_player)
 
     step.dispatch_payload(payload=RoundPayload(user="user_3", card=cards.HEART_QUEEN))
     step.dispatch_payload(payload=RoundPayload(user="user_4", card=cards.DIAMOND_3))
@@ -143,9 +143,7 @@ def test_dispatch_payload_when_last_card_is_being_put(game_state_with_current_pl
 def test_dispatch_payload_when_everyone_has_card_of_given_suit(
     game_state_with_current_player_round_when_everyone_has_one_suit: GameState,
 ) -> None:
-    step = InProgressStep(
-        game_state=game_state_with_current_player_round_when_everyone_has_one_suit, local_state=RoundState()
-    )
+    step = InProgressStep(game_state=game_state_with_current_player_round_when_everyone_has_one_suit)
 
     step.dispatch_payload(payload=RoundPayload(user="user_3", card=cards.SPADE_4))
     step.dispatch_payload(payload=RoundPayload(user="user_4", card=cards.SPADE_JACK))

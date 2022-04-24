@@ -1,3 +1,5 @@
+import logging
+
 from pydantic import BaseModel, Field
 
 from src.core.abstract import GameStateAsyncStore, GameStateStore, GameStep
@@ -20,7 +22,10 @@ class Game(BaseModel):
 
     @classmethod
     def start_game(
-        cls, users: list[USER], store: GameStateStore | GameStateAsyncStore, max_score: int = 100
+        cls,
+        users: list[USER],
+        store: GameStateStore | GameStateAsyncStore,
+        max_score: int = 100,
     ) -> "Game":
         settings = GameSettings(max_score=max_score)
         state = GameState.get_initial_game_state(users=users)
@@ -32,9 +37,14 @@ class Game(BaseModel):
         game_step.validate_payload(payload=payload)
         self.state = game_step.dispatch_payload(payload=payload)
 
-        if game_step.should_switch_to_next_step and (next_step_class := game_step.next_step_class) is not None:
+        if self.is_finished:
+            logging.info("Game finished")
+            return
+
+        if game_step.should_switch_to_next_step:
+            next_step_class = self.current_step.next_step_class or CardExchangeStep
             self.state.current_step = next_step_class(game_state=self.state)
-            self.state = self.state.current_step.on_start()
+            self.state = self.current_step.on_start()
 
     def _load_state(self) -> None:
         self.state = self.store.load_game_state()
@@ -47,3 +57,7 @@ class Game(BaseModel):
 
     async def _save_state_async(self) -> None:
         await self.store.save_game_state_async(game_state=self.state)
+
+    @property
+    def is_finished(self) -> bool:
+        return self.current_step is None and max(self.state.scores.values()) >= self.settings.max_score

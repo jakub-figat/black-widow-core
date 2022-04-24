@@ -1,21 +1,70 @@
 from copy import deepcopy
 from typing import Type
 
+from pydantic import Field
+
 from src.core.abstract import GameStep
 from src.core.cards import Card
 from src.core.consts import USER
 from src.core.exceptions import InvalidPayloadBody
 from src.core.mixins import RoundDispatchPayloadMixin, RoundPayloadValidationMixin
 from src.core.state import GameState
-from src.core.types import CardExchangePayload, CardExchangeState, Payload, RoundPayload, RoundState
+from src.core.types import (
+    CardExchangePayload,
+    CardExchangeState,
+    FinishedPayload,
+    FinishedState,
+    Payload,
+    RoundPayload,
+    RoundState,
+)
 from src.core.utils import get_first_user_card_tuple
 
 
-class InProgressStep(RoundPayloadValidationMixin, RoundDispatchPayloadMixin, GameStep):
-    local_state: RoundState
+class FinishedStep(GameStep):
+    local_state: FinishedState = Field(default_factory=FinishedState)
 
-    def on_start(self) -> None:
-        pass
+    def validate_payload(self, payload: FinishedPayload) -> None:
+        super().validate_payload(payload=payload)
+        if payload.user in self.local_state.users_ready:
+            raise InvalidPayloadBody(f"User {payload.user} has already declared readiness.")
+
+    def dispatch_payload(self, payload: FinishedPayload) -> GameState:
+        self.local_state.users_ready.add(payload.user)
+        if len(self.local_state.users_ready) == len(self.game_state.users):
+            self.local_state = set()
+            new_state = self.game_state.copy(deep=True)
+            new_state = GameState.from_state(game_state=new_state)
+            self.game_state = new_state
+
+        return self.game_state
+
+    def on_start(self) -> GameState:
+        new_state = self.game_state.copy(deep=True)
+        new_state.current_user = None
+
+        self.game_state = new_state
+        return self.game_state
+
+    @property
+    def payload_class(self) -> Type[Payload]:
+        return FinishedPayload
+
+    @property
+    def name(self) -> str:
+        return "FINISHED"
+
+    @property
+    def next_step_class(self) -> Type["GameStep"] | None:
+        return None
+
+    @property
+    def should_switch_to_next_step(self) -> bool:
+        return len(self.local_state.users_ready) == len(self.game_state.users)
+
+
+class InProgressStep(RoundPayloadValidationMixin, RoundDispatchPayloadMixin, GameStep):
+    local_state: RoundState = Field(default_factory=RoundState)
 
     @property
     def payload_class(self) -> Type[RoundPayload]:
@@ -27,7 +76,7 @@ class InProgressStep(RoundPayloadValidationMixin, RoundDispatchPayloadMixin, Gam
 
     @property
     def next_step_class(self) -> Type["GameStep"] | None:
-        pass
+        return FinishedStep
 
     @property
     def should_switch_to_next_step(self) -> bool:
@@ -35,7 +84,7 @@ class InProgressStep(RoundPayloadValidationMixin, RoundDispatchPayloadMixin, Gam
 
 
 class FirstRoundStep(RoundPayloadValidationMixin, RoundDispatchPayloadMixin, GameStep):
-    local_state: RoundState
+    local_state: RoundState = Field(default_factory=RoundState)
 
     def on_start(self) -> GameState:
         first_user, card = get_first_user_card_tuple(decks=self.game_state.decks)
@@ -60,7 +109,7 @@ class FirstRoundStep(RoundPayloadValidationMixin, RoundDispatchPayloadMixin, Gam
 
 
 class CardExchangeStep(GameStep):
-    local_state: CardExchangeState
+    local_state: CardExchangeState = Field(default_factory=CardExchangeState)
 
     def validate_payload(self, payload: CardExchangePayload) -> None:
         super().validate_payload(payload=payload)

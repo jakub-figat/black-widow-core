@@ -13,6 +13,11 @@ class GameStep(BaseModel, ABC):
     local_state: BaseModel
 
     def validate_payload(self, payload: Payload) -> None:
+        """
+        Method called by Game.dispatch method.
+        :param payload:
+        :return:
+        """
         if (user := self.game_state.current_user) is not None and user != payload.user:
             raise InvalidUser("User is not permitted to perform action now.")
 
@@ -20,6 +25,9 @@ class GameStep(BaseModel, ABC):
             raise InvalidPayloadType(
                 f"Expected type '{self.payload_class.__name__}', received {payload.__class__.__name__}"
             )
+
+    def on_start(self) -> None:
+        """Method called by Game class on next step when step is switched"""
 
     @abstractmethod
     def dispatch_payload(self, payload: Payload) -> GameState:

@@ -5,20 +5,46 @@ from src.core.abstract import GameStep
 from src.core.cards import Card
 from src.core.consts import USER
 from src.core.exceptions import InvalidPayloadBody
+from src.core.mixins import RoundDispatchPayloadMixin, RoundPayloadValidationMixin
 from src.core.state import GameState
-from src.core.types import CardExchangePayload, CardExchangeState, FirstRoundPayload, Payload
+from src.core.types import CardExchangePayload, CardExchangeState, Payload, RoundPayload, RoundState
+from src.core.utils import get_first_user_card_tuple
 
 
-class FirstRoundStep(GameStep):
-    def validate_payload(self, payload: FirstRoundPayload) -> None:
-        pass
+class InProgressStep(RoundPayloadValidationMixin, RoundDispatchPayloadMixin, GameStep):
+    local_state: RoundState
 
-    def dispatch_payload(self, payload: Payload) -> GameState:
+    def on_start(self) -> None:
         pass
 
     @property
-    def payload_class(self) -> Type[Payload]:
-        return FirstRoundPayload
+    def payload_class(self) -> Type[RoundPayload]:
+        return RoundPayload
+
+    @property
+    def name(self) -> str:
+        return "IN_PROGRESS"
+
+    @property
+    def next_step_class(self) -> Type["GameStep"] | None:
+        pass
+
+    @property
+    def should_switch_to_next_step(self) -> bool:
+        return not self.local_state.cards_on_table
+
+
+class FirstRoundStep(RoundPayloadValidationMixin, RoundDispatchPayloadMixin, GameStep):
+    local_state: RoundState
+
+    def on_start(self) -> None:
+        first_user, card = get_first_user_card_tuple(decks=self.game_state.decks)
+        payload = RoundPayload(user=first_user, card=card)
+        self.dispatch_payload(payload=payload)
+
+    @property
+    def payload_class(self) -> Type[RoundPayload]:
+        return RoundPayload
 
     @property
     def name(self) -> str:
@@ -26,11 +52,11 @@ class FirstRoundStep(GameStep):
 
     @property
     def next_step_class(self) -> Type["GameStep"] | None:
-        return None
+        return InProgressStep
 
     @property
     def should_switch_to_next_step(self) -> bool:
-        pass
+        return not self.local_state.cards_on_table
 
 
 class CardExchangeStep(GameStep):
@@ -43,7 +69,7 @@ class CardExchangeStep(GameStep):
 
         for card in payload.cards:
             if card not in self.game_state.decks[payload.user]:
-                raise InvalidPayloadBody(f"User {payload.user} does not have card {card.identifier}")
+                raise InvalidPayloadBody(f"User {payload.user} does not have card {card}")
 
     def dispatch_payload(self, payload: CardExchangePayload) -> GameState:
         self.local_state.cards_to_exchange[payload.user] = payload.cards
@@ -68,6 +94,9 @@ class CardExchangeStep(GameStep):
                 new_decks[from_to_mapping[user]].append(card)
 
         return new_decks
+
+    def on_start(self) -> None:
+        pass
 
     @property
     def payload_class(self) -> Type[Payload]:

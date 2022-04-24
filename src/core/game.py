@@ -34,6 +34,7 @@ class Game(BaseModel):
 
         if game_step.should_switch_to_next_step:
             self.state.current_step = game_step.next_step_class(game_state=self.state)
+            self.state.current_step.on_start()
 
     def _load_state(self) -> None:
         self.state = self.store.load_game_state()

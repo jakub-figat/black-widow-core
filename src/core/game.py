@@ -32,9 +32,9 @@ class Game(BaseModel):
         game_step.validate_payload(payload=payload)
         self.state = game_step.dispatch_payload(payload=payload)
 
-        if game_step.should_switch_to_next_step:
-            self.state.current_step = game_step.next_step_class(game_state=self.state)
-            self.state.current_step.on_start()
+        if game_step.should_switch_to_next_step and (next_step_class := game_step.next_step_class) is not None:
+            self.state.current_step = next_step_class(game_state=self.state)
+            self.state = self.state.current_step.on_start()
 
     def _load_state(self) -> None:
         self.state = self.store.load_game_state()

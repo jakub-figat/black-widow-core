@@ -31,16 +31,16 @@ class InProgressStep(RoundPayloadValidationMixin, RoundDispatchPayloadMixin, Gam
 
     @property
     def should_switch_to_next_step(self) -> bool:
-        return not self.local_state.cards_on_table
+        return not any(self.game_state.decks.values())
 
 
 class FirstRoundStep(RoundPayloadValidationMixin, RoundDispatchPayloadMixin, GameStep):
     local_state: RoundState
 
-    def on_start(self) -> None:
+    def on_start(self) -> GameState:
         first_user, card = get_first_user_card_tuple(decks=self.game_state.decks)
         payload = RoundPayload(user=first_user, card=card)
-        self.dispatch_payload(payload=payload)
+        return self.dispatch_payload(payload=payload)
 
     @property
     def payload_class(self) -> Type[RoundPayload]:

@@ -4,8 +4,17 @@ import pytest
 
 from src.core import cards
 from src.core.consts import USER
+from src.core.enums import CardSuit
 from src.core.exceptions import FirstUserNotFound, InvalidNumberOfUsers
-from src.core.utils import get_first_user, get_initial_decks, get_initial_scores
+from src.core.utils import (
+    check_if_user_has_only_one_suit,
+    check_if_user_has_suit,
+    count_points_for_cards,
+    get_first_user,
+    get_first_user_card_tuple,
+    get_initial_decks,
+    get_initial_scores,
+)
 
 
 @pytest.mark.parametrize(
@@ -84,3 +93,81 @@ def test_get_first_user(decks: dict[USER, list[cards.Card]], first_user: USER) -
 def test_get_first_user_raises_error_when_no_beginning_card_is_found(decks: dict[USER, list[cards.Card]]):
     with pytest.raises(FirstUserNotFound):
         get_first_user(decks=decks)
+
+
+@pytest.mark.parametrize(
+    "decks,expected_tuple",
+    [
+        (
+            {"user_1": [cards.CLUB_2], "user_2": [cards.CLUB_3], "user_3": [cards.CLUB_4], "user_4": [cards.CLUB_5]},
+            ("user_1", cards.CLUB_2),
+        ),
+        ({"user_1": [cards.CLUB_5], "user_2": [cards.CLUB_3], "user_3": [cards.CLUB_4]}, ("user_2", cards.CLUB_3)),
+    ],
+)
+def test_get_first_user_card_tuple(
+    decks: dict[USER, list[cards.Card]], expected_tuple: tuple[USER, cards.Card]
+) -> None:
+    assert get_first_user_card_tuple(decks=decks) == expected_tuple
+
+
+@pytest.mark.parametrize(
+    "decks",
+    [
+        {"user_1": [cards.CLUB_2], "user_2": [cards.CLUB_4], "user_3": [cards.SPADE_QUEEN]},
+        {
+            "user_1": [cards.CLUB_3],
+            "user_2": [cards.SPADE_QUEEN],
+            "user_3": [cards.HEART_QUEEN],
+            "user_4": [cards.HEART_4],
+        },
+        {"user_1": [], "user_2": [], "user_3": []},
+    ],
+)
+def test_get_first_user_card_tuple_raises_error_when_no_user_has_beginning_card(
+    decks: dict[USER, list[cards.Card]]
+) -> None:
+    with pytest.raises(FirstUserNotFound):
+        get_first_user_card_tuple(decks=decks)
+
+
+@pytest.mark.parametrize(
+    "suit,deck,result",
+    [
+        (CardSuit.SPADE, [cards.CLUB_3, cards.CLUB_4], False),
+        (CardSuit.SPADE, [cards.SPADE_QUEEN, cards.CLUB_3], True),
+        (CardSuit.HEART, [], False),
+        (CardSuit.DIAMOND, [cards.CLUB_3, cards.CLUB_4, cards.DIAMOND_KING], True),
+    ],
+)
+def test_check_if_user_has_suit(suit: CardSuit, deck: list[cards.Card], result: bool) -> None:
+    assert check_if_user_has_suit(suit=suit, deck=deck) is result
+
+
+@pytest.mark.parametrize(
+    "deck,result",
+    [
+        ([cards.CLUB_2, cards.CLUB_3, cards.CLUB_ACE], True),
+        ([cards.CLUB_2], True),
+        ([cards.CLUB_2, cards.HEART_KING], False),
+        ([cards.HEART_KING, cards.DIAMOND_4, cards.HEART_QUEEN, cards.CLUB_JACK], False),
+        ([], True),
+    ],
+)
+def test_check_if_user_has_only_one_suit(deck: list[cards.Card], result: bool) -> None:
+    assert check_if_user_has_only_one_suit(deck=deck) is result
+
+
+@pytest.mark.parametrize(
+    "deck,score",
+    [
+        ([cards.CLUB_2, cards.CLUB_JACK, cards.DIAMOND_KING], 0),
+        ([cards.HEART_4, cards.HEART_KING, cards.CLUB_JACK, cards.HEART_QUEEN], 3),
+        ([cards.SPADE_QUEEN, cards.SPADE_KING, cards.SPADE_ACE], 30),
+        ([cards.SPADE_QUEEN, cards.SPADE_KING, cards.SPADE_ACE, cards.HEART_5], 31),
+        ([cards.SPADE_QUEEN, cards.CLUB_JACK], 13),
+        ([], 0),
+    ],
+)
+def test_count_points_for_cards(deck: list[cards.Card], score: int) -> None:
+    assert count_points_for_cards(deck=deck) == score

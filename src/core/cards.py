@@ -7,6 +7,7 @@ from src.core.exceptions import InvalidCardComparison
 class Card(BaseModel):
     suit: CardSuit
     value: int = Field(..., ge=2, le=14)
+    score: int = 0
 
     def __lt__(self, card: "Card") -> bool:
         if self.suit != card.suit:
@@ -34,9 +35,9 @@ SPADE_8 = Card(suit=CardSuit.SPADE, value=8)
 SPADE_9 = Card(suit=CardSuit.SPADE, value=9)
 SPADE_10 = Card(suit=CardSuit.SPADE, value=10)
 SPADE_JACK = Card(suit=CardSuit.SPADE, value=11)
-SPADE_QUEEN = Card(suit=CardSuit.SPADE, value=12)
-SPADE_KING = Card(suit=CardSuit.SPADE, value=13)
-SPADE_ACE = Card(suit=CardSuit.SPADE, value=14)
+SPADE_QUEEN = Card(suit=CardSuit.SPADE, value=12, score=13)
+SPADE_KING = Card(suit=CardSuit.SPADE, value=13, score=10)
+SPADE_ACE = Card(suit=CardSuit.SPADE, value=14, score=7)
 
 CLUB_2 = Card(suit=CardSuit.CLUB, value=2)
 CLUB_3 = Card(suit=CardSuit.CLUB, value=3)
@@ -66,19 +67,19 @@ DIAMOND_QUEEN = Card(suit=CardSuit.DIAMOND, value=12)
 DIAMOND_KING = Card(suit=CardSuit.DIAMOND, value=13)
 DIAMOND_ACE = Card(suit=CardSuit.DIAMOND, value=14)
 
-HEART_2 = Card(suit=CardSuit.HEART, value=2)
-HEART_3 = Card(suit=CardSuit.HEART, value=3)
-HEART_4 = Card(suit=CardSuit.HEART, value=4)
-HEART_5 = Card(suit=CardSuit.HEART, value=5)
-HEART_6 = Card(suit=CardSuit.HEART, value=6)
-HEART_7 = Card(suit=CardSuit.HEART, value=7)
-HEART_8 = Card(suit=CardSuit.HEART, value=8)
-HEART_9 = Card(suit=CardSuit.HEART, value=9)
-HEART_10 = Card(suit=CardSuit.HEART, value=10)
-HEART_JACK = Card(suit=CardSuit.HEART, value=11)
-HEART_QUEEN = Card(suit=CardSuit.HEART, value=12)
-HEART_KING = Card(suit=CardSuit.HEART, value=13)
-HEART_ACE = Card(suit=CardSuit.HEART, value=14)
+HEART_2 = Card(suit=CardSuit.HEART, value=2, score=1)
+HEART_3 = Card(suit=CardSuit.HEART, value=3, score=1)
+HEART_4 = Card(suit=CardSuit.HEART, value=4, score=1)
+HEART_5 = Card(suit=CardSuit.HEART, value=5, score=1)
+HEART_6 = Card(suit=CardSuit.HEART, value=6, score=1)
+HEART_7 = Card(suit=CardSuit.HEART, value=7, score=1)
+HEART_8 = Card(suit=CardSuit.HEART, value=8, score=1)
+HEART_9 = Card(suit=CardSuit.HEART, value=9, score=1)
+HEART_10 = Card(suit=CardSuit.HEART, value=10, score=1)
+HEART_JACK = Card(suit=CardSuit.HEART, value=11, score=1)
+HEART_QUEEN = Card(suit=CardSuit.HEART, value=12, score=1)
+HEART_KING = Card(suit=CardSuit.HEART, value=13, score=1)
+HEART_ACE = Card(suit=CardSuit.HEART, value=14, score=1)
 
 
 ALL_CARDS = [

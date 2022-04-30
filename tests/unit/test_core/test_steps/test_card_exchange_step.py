@@ -8,6 +8,10 @@ from src.core.steps import CardExchangePayload, CardExchangeState, CardExchangeS
 from src.utils import is_list_contained_by_list
 
 
+def _get_card_for_exchange(decks: dict[USER, list[Card]]) -> list[list[Card]]:
+    return [cards[:3] for cards in decks.values()]
+
+
 @pytest.fixture
 def initial_game_state_with_three_users() -> GameState:
     return GameState.get_initial_game_state(users=["user_1", "user_2", "user_3"])
@@ -16,10 +20,6 @@ def initial_game_state_with_three_users() -> GameState:
 @pytest.fixture
 def initial_game_state_with_four_users() -> GameState:
     return GameState.get_initial_game_state(users=["user_1", "user_2", "user_3", "user_4"])
-
-
-def _gets_card_for_exchange(decks: dict[USER, list[Card]]) -> list[list[Card]]:
-    return [cards[:3] for cards in decks.values()]
 
 
 def test_validate_payload(initial_game_state_with_four_users: GameState) -> None:
@@ -34,7 +34,7 @@ def test_dispatch_payload_when_not_all_three_players_had_put_cards_for_exchange(
     initial_game_state_with_three_users: GameState,
 ) -> None:
     step = CardExchangeStep(game_state=initial_game_state_with_three_users)
-    cards_for_exchange_1, cards_for_exchange_2, _ = _gets_card_for_exchange(
+    cards_for_exchange_1, cards_for_exchange_2, _ = _get_card_for_exchange(
         decks=initial_game_state_with_three_users.decks
     )
     payload_1 = CardExchangePayload(user="user_1", cards=cards_for_exchange_1)
@@ -51,7 +51,7 @@ def test_dispatch_payload_when_not_all_four_players_had_put_cards_for_exchange(
     initial_game_state_with_four_users: GameState,
 ) -> None:
     step = CardExchangeStep(game_state=initial_game_state_with_four_users)
-    cards_for_exchange_1, cards_for_exchange_2, cards_for_exchange_3, _ = _gets_card_for_exchange(
+    cards_for_exchange_1, cards_for_exchange_2, cards_for_exchange_3, _ = _get_card_for_exchange(
         decks=initial_game_state_with_four_users.decks
     )
     payload_1 = CardExchangePayload(user="user_1", cards=cards_for_exchange_1)
@@ -102,7 +102,7 @@ def test_dispatch_payload_when_all_three_players_had_put_cards_for_exchange(
     initial_game_state_with_three_users: GameState,
 ) -> None:
     step = CardExchangeStep(game_state=initial_game_state_with_three_users)
-    cards_for_exchange_1, cards_for_exchange_2, cards_for_exchange_3 = _gets_card_for_exchange(
+    cards_for_exchange_1, cards_for_exchange_2, cards_for_exchange_3 = _get_card_for_exchange(
         decks=initial_game_state_with_three_users.decks
     )
 
@@ -126,7 +126,7 @@ def test_dispatch_payload_when_all_four_players_had_put_cards_for_exchange(
     initial_game_state_with_four_users: GameState,
 ) -> None:
     step = CardExchangeStep(game_state=initial_game_state_with_four_users)
-    cards_for_exchange_1, cards_for_exchange_2, cards_for_exchange_3, cards_for_exchange_4 = _gets_card_for_exchange(
+    cards_for_exchange_1, cards_for_exchange_2, cards_for_exchange_3, cards_for_exchange_4 = _get_card_for_exchange(
         decks=initial_game_state_with_four_users.decks
     )
 
@@ -151,7 +151,7 @@ def test_dispatch_payload_when_all_four_players_had_put_cards_for_exchange(
 
 def test_should_switch_to_next_step(initial_game_state_with_three_users: GameState) -> None:
     step = CardExchangeStep(game_state=initial_game_state_with_three_users)
-    cards_for_exchange_1, cards_for_exchange_2, cards_for_exchange_3 = _gets_card_for_exchange(
+    cards_for_exchange_1, cards_for_exchange_2, cards_for_exchange_3 = _get_card_for_exchange(
         decks=initial_game_state_with_three_users.decks
     )
 

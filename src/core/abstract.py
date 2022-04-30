@@ -28,6 +28,7 @@ class GameStep(BaseModel, ABC):
 
     def on_start(self) -> GameState:
         """Method called by Game class on next step when step is switched"""
+        return self.game_state
 
     @abstractmethod
     def dispatch_payload(self, payload: Payload) -> GameState:

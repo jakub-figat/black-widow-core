@@ -88,7 +88,6 @@ def test_finished_step_when_everyone_is_ready(game_state_with_round_finished: Ga
     assert new_state != game_state_with_round_finished
     assert new_state.users == game_state_with_round_finished.users
     assert new_state.scores == game_state_with_round_finished.scores
-    assert not step.local_state
 
 
 def test_should_switch_to_next_step_when_round_is_finished(game_state_with_round_finished: GameState) -> None:

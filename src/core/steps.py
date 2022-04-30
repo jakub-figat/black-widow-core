@@ -32,7 +32,6 @@ class FinishedStep(GameStep):
     def dispatch_payload(self, payload: FinishedPayload) -> GameState:
         self.local_state.users_ready.add(payload.user)
         if len(self.local_state.users_ready) == len(self.game_state.users):
-            self.local_state = set()
             new_state = self.game_state.copy(deep=True)
             new_state = GameState.from_state(game_state=new_state)
             self.game_state = new_state
@@ -143,9 +142,6 @@ class CardExchangeStep(GameStep):
                 new_decks[from_to_mapping[user]].append(card)
 
         return new_decks
-
-    def on_start(self) -> None:
-        pass
 
     @property
     def payload_class(self) -> Type[Payload]:

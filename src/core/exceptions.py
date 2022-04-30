@@ -24,3 +24,11 @@ class InvalidPayloadType(GameError):
 
 class InvalidPayloadBody(GameError):
     pass
+
+
+class StoreError(Exception):
+    pass
+
+
+class NoStoreSet(StoreError):
+    pass

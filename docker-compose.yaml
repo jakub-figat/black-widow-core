@@ -4,27 +4,8 @@ services:
   app:
     build:
       context: .
-      args:
-        ENV: dev
     container_name: black_widow_app
     volumes:
       - ./:/app
     stdin_open: true
     tty: true
-    ports:
-      - "8000:8000"
-
-  localstack:
-    image: localstack/localstack:0.14.2
-    env_file:
-      - ./.env.localstack
-    ports:
-      - "4566:4566"
-      - "8080:8080"
-      - "433:433"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - localstack_data:/tmp/localstack/data
-
-volumes:
-  localstack_data:

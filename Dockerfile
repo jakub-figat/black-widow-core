@@ -18,4 +18,6 @@ RUN poetry install --no-interaction --no-ansi
 
 COPY . .
 
-RUN chmod +x -R ./scripts
+COPY ./scripts/* /scripts/
+
+RUN chmod +x -R /scripts

@@ -28,7 +28,7 @@ jobs:
         run: docker run --rm -t ${{ env.IMAGE_TAG }} bash -c "prospector ."
 
       - name: Run unit tests
-        run: docker run --rm -t ${{ env.IMAGE_TAG }} bash -c "./scripts/unit-test.sh"
+        run: docker run --rm -t ${{ env.IMAGE_TAG }} bash -c "/scripts/unit-test.sh"
 
       - name: Run integration tests
-        run: docker run --rm -t ${{ env.IMAGE_TAG }} bash -c "./scripts/integration-test.sh"
+        run: docker run --rm -t ${{ env.IMAGE_TAG }} bash -c "/scripts/integration-test.sh"

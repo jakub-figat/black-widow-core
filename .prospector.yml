@@ -3,7 +3,7 @@ test-warnings: true
 max-line-length: 119
 
 ignore-paths:
-  - env
+  - venv
 
 pylint:
   run: true

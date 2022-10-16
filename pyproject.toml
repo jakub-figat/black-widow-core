@@ -8,6 +8,10 @@ authors = ["jakub-figat"]
 python = "^3.10"
 pydantic = "^1.9.0"
 chalice = "^1.27.0"
+fastapi = "^0.85.1"
+uvicorn = {extras = ["standard"], version = "^0.18.3"}
+gunicorn = "^20.1.0"
+python-socketio = "^5.7.1"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"
@@ -25,7 +29,7 @@ exclude = '''
   | \.hg
   | \.mypy_cache
   | \.tox
-  | env
+  | venv
   | _build
   | buck-out
   | build
@@ -37,7 +41,7 @@ exclude = '''
 line_length = 119
 lines_after_imports = 2
 profile = "black"
-skip_glob = ["env/*"]
+skip_glob = ["venv/*"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

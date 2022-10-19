@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Type
+from typing import Optional, Type
 
 from pydantic import Field
 
@@ -54,7 +54,7 @@ class FinishedStep(GameStep):
         return "FINISHED"
 
     @property
-    def next_step_class(self) -> Type["GameStep"] | None:
+    def next_step_class(self) -> Optional[Type["GameStep"]]:
         return None
 
     @property
@@ -74,7 +74,7 @@ class InProgressStep(RoundPayloadValidationMixin, RoundDispatchPayloadMixin, Gam
         return "IN_PROGRESS"
 
     @property
-    def next_step_class(self) -> Type["GameStep"] | None:
+    def next_step_class(self) -> Optional[Type["GameStep"]]:
         return FinishedStep
 
     @property
@@ -99,7 +99,7 @@ class FirstRoundStep(RoundPayloadValidationMixin, RoundDispatchPayloadMixin, Gam
         return "FIRST_ROUND"
 
     @property
-    def next_step_class(self) -> Type["GameStep"] | None:
+    def next_step_class(self) -> Optional[Type["GameStep"]]:
         return InProgressStep
 
     @property
@@ -152,7 +152,7 @@ class CardExchangeStep(GameStep):
         return "CARD_EXCHANGE"
 
     @property
-    def next_step_class(self) -> Type["GameStep"] | None:
+    def next_step_class(self) -> Optional[Type["GameStep"]]:
         return FirstRoundStep
 
     @property

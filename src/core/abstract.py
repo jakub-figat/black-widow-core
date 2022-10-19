@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Type
+from typing import Any, Optional, Type
 
 from pydantic import BaseModel
 
@@ -46,7 +46,7 @@ class GameStep(BaseModel, ABC):
 
     @property
     @abstractmethod
-    def next_step_class(self) -> Type["GameStep"] | None:
+    def next_step_class(self) -> Optional[Type["GameStep"]]:
         raise NotImplementedError
 
     @property

@@ -1,4 +1,5 @@
 import logging
+from typing import Union
 
 from pydantic import BaseModel, Field
 
@@ -19,13 +20,13 @@ class Game(BaseModel):
     settings: GameSettings
     state: GameState
     current_step: GameStep
-    store: GameStateStore | GameStateAsyncStore | None = None
+    store: Union[GameStateStore, GameStateAsyncStore, None] = None
 
     @classmethod
     def start_game(
         cls,
         users: list[USER],
-        store: GameStateStore | GameStateAsyncStore | None = None,
+        store: Union[GameStateStore, GameStateAsyncStore, None] = None,
         max_score: int = 100,
     ) -> "Game":
         settings = GameSettings(max_score=max_score)

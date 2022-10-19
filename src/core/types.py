@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 from src.core.cards import Card
@@ -27,7 +29,7 @@ class CardExchangeState(BaseModel):
 
 class RoundState(BaseModel):
     cards_on_table: dict[USER, Card] = Field(default_factory=dict)
-    table_suit: CardSuit | None = None
+    table_suit: Optional[CardSuit] = None
 
 
 class FinishedState(BaseModel):

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 from uuid import uuid4
 
 from src.core.game import Game
@@ -64,11 +64,9 @@ class GameService:
         user.lobbies_ids.remove(lobby_id)
         self._user_data_access.save(model=user)
 
-    # TODO: WIP
-    def save_game(self, game: GameModel) -> None:
-        self._game_data_access.save(model=game)
+    def dispatch_game_action(self, payload: dict[str, Any], game_id: str, user: UserModel) -> None:
+        game_model = self._game_data_access.get(pk=f"games#{game_id}", sk=f"games#{game_id}")
+        payload = game_model.game.current_step.payload_class(**payload, user=user.email)
+        game_model.game.dispatch(payload=payload)
 
-    def add_user_to_game(self, user: UserModel, game_id: str) -> None:
-        game = self._game_data_access.get(pk=f"games#{game_id}", sk=f"games#{game_id}")
-        user.games_ids.append(game.game_id)
-        self._user_data_access.save(model=user)
+        self._game_data_access.save(model=game_model)

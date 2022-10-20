@@ -5,17 +5,8 @@ services:
     build:
       context: .
     container_name: black_widow_app
-    depends_on:
-      - redis
+    env_file: ./.env
     volumes:
       - ./:/app
     stdin_open: true
     tty: true
-
-  redis:
-    image: redis:7.0.5-alpine
-    volumes:
-      - redis_data:/data
-
-volumes:
-  redis_data:

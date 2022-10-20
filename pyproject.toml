@@ -7,11 +7,8 @@ authors = ["jakub-figat"]
 [tool.poetry.dependencies]
 python = "^3.9"
 pydantic = "^1.9.0"
-chalice = "^1.27.0"
-fastapi = "^0.85.1"
-uvicorn = {extras = ["standard"], version = "^0.18.3"}
-gunicorn = "^20.1.0"
-python-socketio = "^5.7.1"
+boto3 = "^1.24.93"
+mypy-boto3-dynamodb = "^1.24.74"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"

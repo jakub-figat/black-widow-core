@@ -1,6 +1,7 @@
 import pytest
 from mypy_boto3_dynamodb.service_resource import Table
 
+from src.data_access.exceptions import DataAccessException, DoesNotExist
 from src.data_access.game import GameDataAccess
 from src.data_access.lobby import LobbyDataAccess
 from src.data_access.user import UserDataAccess
@@ -26,10 +27,58 @@ def test_game_service_create_lobby_and_add_player(game_service: GameService) -> 
     lobby = game_service.create_lobby(user=user)
     game_service.add_user_to_lobby(lobby_id=lobby.lobby_id, user=other_user)
 
-    lobby = game_service._lobby_data_access.get(pk=f"games#lobby#{lobby.lobby_id}", sk=f"games#lobby#{lobby.lobby_id}")
+    lobby = game_service._lobby_data_access.get(pk=lobby.pk, sk=lobby.sk)
     user = game_service._user_data_access.get(pk=user.pk, sk=user.sk)
     other_user = game_service._user_data_access.get(pk=other_user.pk, sk=other_user.sk)
 
     assert len(lobby.users) == 2
     assert lobby.lobby_id in user.lobbies_ids
     assert lobby.lobby_id in other_user.lobbies_ids
+
+
+def test_game_service_add_user_to_not_existing_lobby(game_service: GameService) -> None:
+    with pytest.raises(DoesNotExist, match="Lobby with id *"):
+        game_service.add_user_to_lobby(lobby_id="xdddd", user=UserModel(email="test@test.pl"))
+
+
+def test_game_service_create_lobby_game_started_with_all_players(game_service: GameService) -> None:
+    users = [UserModel(email=f"test{str(num)}") for num in range(1, 4)]
+    game_service._user_data_access.bulk_save(models=users)
+
+    lobby = game_service.create_lobby(user=users[0])
+    game_service.add_user_to_lobby(lobby_id=lobby.lobby_id, user=users[1])
+    game = game_service.add_user_to_lobby(lobby_id=lobby.lobby_id, user=users[2])
+
+    assert game is not None
+    assert game_service._lobby_data_access.get(pk=lobby.pk, sk=lobby.sk) is None
+
+    users = [game_service._user_data_access.get(pk=user.pk, sk=user.sk) for user in users]
+    for user in users:
+        assert user.lobbies_ids == []
+        assert len(user.games_ids) == 1
+
+
+def test_game_service_remove_user_from_lobby(game_service: GameService) -> None:
+    user = UserModel(email="someuserr@test.com")
+    game_service._user_data_access.save(model=user)
+    lobby = game_service.create_lobby(user=user)
+    game_service.remove_user_from_lobby(lobby_id=lobby.lobby_id, user=user)
+
+    lobby = game_service._lobby_data_access.get(pk=lobby.pk, sk=lobby.sk)
+    user = game_service._user_data_access.get(pk=user.pk, sk=user.sk)
+
+    assert lobby.users == []
+    assert user.lobbies_ids == []
+
+
+def test_game_service_remove_user_lobby_without_correct_user(game_service: GameService) -> None:
+    user = UserModel(email="someuserr@test.com")
+    game_service._user_data_access.save(model=user)
+    lobby = game_service.create_lobby(user=user)
+    with pytest.raises(DataAccessException, match=f"User doesnotexist@test.com not found in lobby {lobby.lobby_id}"):
+        game_service.remove_user_from_lobby(lobby_id=lobby.lobby_id, user=UserModel(email="doesnotexist@test.com"))
+
+
+def test_game_service_remove_user_from_not_existing_lobby(game_service: GameService) -> None:
+    with pytest.raises(DoesNotExist, match="Lobby with id *"):
+        game_service.remove_user_from_lobby(lobby_id="xdddd", user=UserModel(email="test@test.pl"))

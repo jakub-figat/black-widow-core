@@ -76,8 +76,10 @@ class GameService:
         self._user_data_access.save(model=user)
 
     # TODO: tests and game end, exception handling
-    def dispatch_game_action(self, payload: dict[str, Any], game_id: str, user: UserModel) -> None:
+    def dispatch_game_action(self, game_id: str, user: UserModel, payload: dict[str, Any]) -> None:
         game_model = self._game_data_access.get(pk=f"games#{game_id}", sk=f"games#{game_id}")
+        if game_model is None:
+            raise DoesNotExist(f"Game with id {game_id} does not exist")
         payload = game_model.game.current_step.payload_class(**payload, user=user.email)
         game_model.game.dispatch(payload=payload)
 

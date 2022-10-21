@@ -1,10 +1,15 @@
+from uuid import uuid4
+
 import pytest
 from mypy_boto3_dynamodb.service_resource import Table
+from pydantic import ValidationError
 
+from src.core.game import Game
 from src.data_access.exceptions import DataAccessException, DoesNotExist
 from src.data_access.game import GameDataAccess
 from src.data_access.lobby import LobbyDataAccess
 from src.data_access.user import UserDataAccess
+from src.schemas.game import GameModel
 from src.schemas.user import UserModel
 from src.services.game import GameService
 
@@ -82,3 +87,31 @@ def test_game_service_remove_user_lobby_without_correct_user(game_service: GameS
 def test_game_service_remove_user_from_not_existing_lobby(game_service: GameService) -> None:
     with pytest.raises(DoesNotExist, match="Lobby with id *"):
         game_service.remove_user_from_lobby(lobby_id="xdddd", user=UserModel(email="test@test.pl"))
+
+
+def test_game_service_dispatch_game_action_after_game_begins(game_service: GameService) -> None:
+    user = UserModel(email="user1@test.com")
+    game_model = GameModel(
+        game_id=str(uuid4()), game=Game.start_game(users=["user1@test.com", "user2@test.com", "user3@test.com"])
+    )
+    game_before = game_model.game
+    game_service._game_data_access.save(model=game_model)
+    user_cards = game_model.game.state.decks[user.email][:3]
+    game_service.dispatch_game_action(user=user, game_id=game_model.game_id, payload={"cards": user_cards})
+
+    game_model = game_service._game_data_access.get(pk=game_model.pk, sk=game_model.sk)
+
+    assert game_model.game.current_step.__class__ == game_before.current_step.__class__
+    assert game_model.game.current_step != game_before.current_step
+
+
+def test_game_service_dispatch_game_action_raises_validation_error_with_invalid_payload(
+    game_service: GameService,
+) -> None:
+    user = UserModel(email="user1@test.com")
+    game = GameModel(
+        game_id=str(uuid4()), game=Game.start_game(users=["user1@test.com", "user2@test.com", "user3@test.com"])
+    )
+    game_service._game_data_access.save(model=game)
+    with pytest.raises(ValidationError):
+        game_service.dispatch_game_action(game_id=game.game_id, user=user, payload={})

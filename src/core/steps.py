@@ -158,3 +158,8 @@ class CardExchangeStep(GameStep):
     @property
     def should_switch_to_next_step(self) -> bool:
         return not self.local_state.cards_to_exchange
+
+
+step_mapping: dict[str, Type[GameStep]] = {
+    step.__name__: step for step in (CardExchangeStep, FirstRoundStep, InProgressStep, FinishedStep)
+}

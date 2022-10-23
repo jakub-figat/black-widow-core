@@ -8,6 +8,7 @@ from mypy_boto3_apigateway.client import APIGatewayClient
 
 from src.data_access import user_data_access
 from src.schemas.user import UserModel
+from src.utils import send_message_to_users
 
 
 logger = Logger()
@@ -25,15 +26,12 @@ Sending data to users
 # on connect
 def handle_user_connect_to_lobby_list(user_id: str, connection_id: str, api_gateway_client: APIGatewayClient) -> None:
     users = user_data_access.get_many(pk="user")
-    for user in users:
-        for user_connection_id in user.connection_ids:
-            if user_connection_id == connection_id:
-                continue
-
-            api_gateway_client.post_to_connection(
-                Data=json.dumps({"message": f"User {user_id} has joined our server!"}).encode("utf-8"),
-                ConnectionId=user_connection_id,
-            )
+    send_message_to_users(
+        users=users,
+        message=f"User {user_id} has joined our server!",
+        api_gateway_client=api_gateway_client,
+        excluded_connection=connection_id,
+    )
 
     user = user_data_access.get(pk="user", sk=f"user#{user_id}")
     if user is None:
@@ -47,20 +45,21 @@ def handle_user_disconnect_from_lobby_list(
     user_id: str, connection_id: str, api_gateway_client: APIGatewayClient
 ) -> None:
     users = user_data_access.get_many(pk="user")
-    for user in users:
-        for user_connection_id in user.connection_ids:
-            if user_connection_id == connection_id:
-                continue
-
-            api_gateway_client.post_to_connection(
-                Data=json.dumps({"message": f"User {user_id} has disconnected!"}).encode("utf-8"),
-                ConnectionId=user_connection_id,
-            )
+    send_message_to_users(
+        users=users,
+        message=f"User {user_id} has disconnected!",
+        api_gateway_client=api_gateway_client,
+        excluded_connection=connection_id,
+    )
 
     user = user_data_access.get(pk="user", sk=f"user#{user_id}")
-
     user.connection_ids.remove(connection_id)
     user_data_access.save(model=user)
+
+
+def handle_user_sends_message(message: str, user_id: str, api_gateway_client: APIGatewayClient) -> None:
+    users = user_data_access.get_many(pk="user")
+    send_message_to_users(message=f"{user_id}: {message}", users=users, api_gateway_client=api_gateway_client)
 
 
 def handle_user_create_lobby(event: dict[str, Any], context: LambdaContext) -> None:
@@ -103,7 +102,12 @@ def main_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any
             api_gateway_client=api_gateway_client,
         )
         return {"statusCode": 200, "body": f"Welcome to our server, {user_id.split('@')[0]}!"}
-    elif route_key == "$message":
+    elif route_key == "$default":
+        handle_user_sends_message(
+            message=json.loads(event.get("body", "{}")).get("message", "Default message"),
+            user_id=user_id,
+            api_gateway_client=api_gateway_client,
+        )
         return {"statusCode": 200, "body": "You sent a message, as of now we cannot reply xD"}
     elif route_key == "$disconnect":
         handle_user_disconnect_from_lobby_list(

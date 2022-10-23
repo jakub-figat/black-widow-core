@@ -32,9 +32,9 @@ def test_game_service_create_lobby_and_add_player(game_service: GameService) -> 
     lobby = game_service.create_lobby(user=user)
     game_service.add_user_to_lobby(lobby_id=lobby.lobby_id, user=other_user)
 
-    lobby = game_service._lobby_data_access.get(pk=lobby.pk, sk=lobby.sk)
-    user = game_service._user_data_access.get(pk=user.pk, sk=user.sk)
-    other_user = game_service._user_data_access.get(pk=other_user.pk, sk=other_user.sk)
+    lobby = game_service._lobby_data_access.get(**lobby.key)
+    user = game_service._user_data_access.get(**user.key)
+    other_user = game_service._user_data_access.get(**other_user.key)
 
     assert len(lobby.users) == 2
     assert lobby.lobby_id in user.lobbies_ids
@@ -55,9 +55,9 @@ def test_game_service_create_lobby_game_started_with_all_players(game_service: G
     game = game_service.add_user_to_lobby(lobby_id=lobby.lobby_id, user=users[2])
 
     assert game is not None
-    assert game_service._lobby_data_access.get(pk=lobby.pk, sk=lobby.sk) is None
+    assert game_service._lobby_data_access.get(**lobby.key) is None
 
-    users = [game_service._user_data_access.get(pk=user.pk, sk=user.sk) for user in users]
+    users = [game_service._user_data_access.get(**user.key) for user in users]
     for user in users:
         assert user.lobbies_ids == []
         assert len(user.games_ids) == 1
@@ -99,7 +99,7 @@ def test_game_service_dispatch_game_action_after_game_begins(game_service: GameS
     user_cards = game_model.game.state.decks[user.email][:3]
     game_service.dispatch_game_action(user=user, game_id=game_model.game_id, payload={"cards": user_cards})
 
-    game_model = game_service._game_data_access.get(pk=game_model.pk, sk=game_model.sk)
+    game_model = game_service._game_data_access.get(**game_model.key)
 
     assert game_model.game.current_step.__class__ == game_before.current_step.__class__
     assert game_model.game.current_step != game_before.current_step

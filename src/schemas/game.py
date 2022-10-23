@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from src.core.game import Game
 from src.core.steps import step_mapping
@@ -28,8 +28,8 @@ class GameModel(DynamoDBBaseModel):
 
     @property
     def pk(self) -> str:
-        return f"games#{self.game_id}"
+        return f"game#{self.game_id}"
 
     @property
     def sk(self) -> str:
-        return f"games#{self.game_id}"
+        return f"game#{self.game_id}"

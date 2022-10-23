@@ -249,3 +249,4 @@ celerybeat.pid
 celerybeat-schedule
 
 backend/invoices/
+.serverless

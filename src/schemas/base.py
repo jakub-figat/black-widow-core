@@ -20,18 +20,22 @@ class DynamoDBBaseModel(BaseSchema, ABC):
     @classmethod
     @abstractmethod
     def from_item(cls, item: dict[str, Any]) -> "DynamoDBBaseModel":
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def to_item(self) -> dict[str, Any]:
-        raise NotImplementedError
+        pass
 
     @property
     @abstractmethod
     def pk(self) -> str:
-        raise NotImplementedError
+        pass
 
     @property
     @abstractmethod
     def sk(self) -> str:
-        raise NotImplementedError
+        pass
+
+    @property
+    def key(self) -> dict[str, Any]:
+        return {"pk": self.pk, "sk": self.sk}

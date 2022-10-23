@@ -7,19 +7,21 @@ class UserModel(DynamoDBBaseModel):
     email: str
     games_ids: list[str] = []
     lobbies_ids: list[str] = []
+    connection_ids: list[str] = []
 
     @classmethod
     def from_item(cls, item: dict[str, Any]) -> "DynamoDBBaseModel":
-        email = item["PK"].split("#")[-1]
-        return cls(email=email, games_ids=item["games_ids"], lobbies_ids=item["lobbies_ids"])
+        email = item.pop("SK").split("#")[-1]
+        item.pop("PK")
+        return cls(email=email, **item)
 
     def to_item(self) -> dict[str, Any]:
         return {"PK": self.pk, "SK": self.sk, **self.dict(exclude={"email"})}
 
     @property
     def pk(self) -> str:
-        return f"games#user#{self.email}"
+        return f"user"
 
     @property
     def sk(self) -> str:
-        return f"games#user#{self.email}"
+        return f"user#{self.email}"

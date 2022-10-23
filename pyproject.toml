@@ -9,6 +9,8 @@ python = "^3.9"
 pydantic = "^1.9.0"
 boto3 = "^1.24.93"
 mypy-boto3-dynamodb = "^1.24.74"
+aws-lambda-powertools = "^1.31.1"
+mypy-boto3-apigateway = "^1.24.36"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"
@@ -27,6 +29,7 @@ exclude = '''
   | \.mypy_cache
   | \.tox
   | venv
+  | .serverless
   | _build
   | buck-out
   | build
@@ -38,7 +41,7 @@ exclude = '''
 line_length = 119
 lines_after_imports = 2
 profile = "black"
-skip_glob = ["venv/*"]
+skip_glob = ["venv/*", ".serverless/*"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

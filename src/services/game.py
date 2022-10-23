@@ -11,6 +11,11 @@ from src.schemas.lobby import LobbyModel
 from src.schemas.user import UserModel
 
 
+class ConnectionService:
+    def __init__(self) -> None:
+        pass
+
+
 class GameService:
     def __init__(
         self, game_data_access: GameDataAccess, user_data_access: UserDataAccess, lobby_data_access: LobbyDataAccess
@@ -29,15 +34,13 @@ class GameService:
         return lobby
 
     def add_user_to_lobby(self, lobby_id: str, user: UserModel) -> Optional[GameModel]:
-        lobby_key = {"pk": f"games#lobby#{lobby_id}", "sk": f"games#lobby#{lobby_id}"}
+        lobby_key = {"pk": f"lobby#{lobby_id}", "sk": f"lobby#{lobby_id}"}
         lobby = self._lobby_data_access.get(**lobby_key)
         if lobby is None:
             raise DoesNotExist(f"Lobby with id {lobby_id} does not exist.")
 
         if len(lobby.users) + 1 == lobby.max_players:  # lobby will be full, we can start the game
-            users = [
-                self._user_data_access.get(pk=f"games#user#{email}", sk=f"games#user#{email}") for email in lobby.users
-            ]
+            users = [self._user_data_access.get(pk=f"user", sk=f"user#{email}") for email in lobby.users]
             game_id = str(uuid4())
             for user_ in users:
                 user_.lobbies_ids.remove(lobby_id)
@@ -62,7 +65,7 @@ class GameService:
         self._user_data_access.save(model=user)
 
     def remove_user_from_lobby(self, lobby_id: str, user: UserModel) -> None:
-        lobby = self._lobby_data_access.get(pk=f"games#lobby#{lobby_id}", sk=f"games#lobby#{lobby_id}")
+        lobby = self._lobby_data_access.get(pk=f"lobby#{lobby_id}", sk=f"lobby#{lobby_id}")
         if lobby is None:
             raise DoesNotExist(f"Lobby with id {lobby_id} does not exist.")
 
@@ -77,7 +80,7 @@ class GameService:
 
     # TODO: tests and game end, exception handling
     def dispatch_game_action(self, game_id: str, user: UserModel, payload: dict[str, Any]) -> None:
-        game_model = self._game_data_access.get(pk=f"games#{game_id}", sk=f"games#{game_id}")
+        game_model = self._game_data_access.get(pk=f"game#{game_id}", sk=f"game#{game_id}")
         if game_model is None:
             raise DoesNotExist(f"Game with id {game_id} does not exist")
         payload = game_model.game.current_step.payload_class(**payload, user=user.email)

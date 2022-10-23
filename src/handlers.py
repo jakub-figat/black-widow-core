@@ -1,0 +1,114 @@
+import json
+from typing import Any
+
+import boto3
+from aws_lambda_powertools.logging import Logger
+from aws_lambda_powertools.utilities.typing import LambdaContext
+from mypy_boto3_apigateway.client import APIGatewayClient
+
+from src.data_access import user_data_access
+from src.schemas.user import UserModel
+
+
+logger = Logger()
+
+
+"""
+Sending data to users
+
+1. list of users in lobby list
+2. list of users in lobby
+3. list of users in game
+"""
+
+
+# on connect
+def handle_user_connect_to_lobby_list(user_id: str, connection_id: str, api_gateway_client: APIGatewayClient) -> None:
+    users = user_data_access.get_many(pk="user")
+    for user in users:
+        for user_connection_id in user.connection_ids:
+            if user_connection_id == connection_id:
+                continue
+
+            api_gateway_client.post_to_connection(
+                Data=json.dumps({"message": f"User {user_id} has joined our server!"}).encode("utf-8"),
+                ConnectionId=user_connection_id,
+            )
+
+    user = user_data_access.get(pk="user", sk=f"user#{user_id}")
+    if user is None:
+        user = UserModel(email=user_id)
+
+    user.connection_ids.append(connection_id)
+    user_data_access.save(model=user)
+
+
+def handle_user_disconnect_from_lobby_list(
+    user_id: str, connection_id: str, api_gateway_client: APIGatewayClient
+) -> None:
+    users = user_data_access.get_many(pk="user")
+    for user in users:
+        for user_connection_id in user.connection_ids:
+            if user_connection_id == connection_id:
+                continue
+
+            api_gateway_client.post_to_connection(
+                Data=json.dumps({"message": f"User {user_id} has disconnected!"}).encode("utf-8"),
+                ConnectionId=user_connection_id,
+            )
+
+    user = user_data_access.get(pk="user", sk=f"user#{user_id}")
+
+    user.connection_ids.remove(connection_id)
+    user_data_access.save(model=user)
+
+
+def handle_user_create_lobby(event: dict[str, Any], context: LambdaContext) -> None:
+    pass
+
+
+def handle_user_leave_lobby(event: dict[str, Any], context: LambdaContext) -> None:
+    pass
+
+
+def handle_user_join_game(event: dict[str, Any], context: LambdaContext) -> None:
+    pass
+
+
+def handle_user_send_game_payload(event: dict[str, Any], context: LambdaContext) -> None:
+    pass
+
+
+def handle_user_leave_game(event: dict[str, Any], context: LambdaContext) -> None:
+    pass
+
+
+@logger.inject_lambda_context(log_event=True)
+def main_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
+    request_context = event.get("requestContext", {})
+    user_id = request_context["authorizer"]["principalId"]
+    domain = request_context.get("domainName")
+    stage = request_context.get("stage")
+    connection_id = request_context.get("connectionId")
+    route_key = request_context.get("routeKey")
+
+    api_gateway_client: APIGatewayClient = boto3.client(
+        "apigatewaymanagementapi", endpoint_url=f"https://{domain}/{stage}"
+    )
+
+    if route_key == "$connect":
+        handle_user_connect_to_lobby_list(
+            user_id=user_id,
+            connection_id=connection_id,
+            api_gateway_client=api_gateway_client,
+        )
+        return {"statusCode": 200, "body": f"Welcome to our server, {user_id.split('@')[0]}!"}
+    elif route_key == "$message":
+        return {"statusCode": 200, "body": "You sent a message, as of now we cannot reply xD"}
+    elif route_key == "$disconnect":
+        handle_user_disconnect_from_lobby_list(
+            user_id=request_context["authorizer"]["principalId"],
+            connection_id=connection_id,
+            api_gateway_client=api_gateway_client,
+        )
+        return {"statusCode": 200, "body": f"See you soon, {user_id.split('@')[0]}!"}

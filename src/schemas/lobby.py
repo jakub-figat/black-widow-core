@@ -20,8 +20,8 @@ class LobbyModel(DynamoDBBaseModel):
 
     @property
     def pk(self) -> str:
-        return f"games#lobby#{self.lobby_id}"
+        return f"lobby#{self.lobby_id}"
 
     @property
     def sk(self) -> str:
-        return f"games#lobby#{self.lobby_id}"
+        return f"lobby#{self.lobby_id}"

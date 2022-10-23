@@ -1,0 +1,52 @@
+frameworkVersion: '3'
+service: black-widow-core
+
+
+useDotenv: true
+
+
+provider:
+  name: aws
+  region: eu-central-1
+  runtime: python3.9
+
+
+plugins:
+  - serverless-python-requirements
+  - serverless-offline
+
+
+package:
+  exclude:
+    - venv/**
+
+
+custom:
+  pythonRequirements:
+    slim: true
+    dockerImage: mlupin/docker-lambda:python3.9-build
+    dockerizePip: non-linux
+    usePoetry: true
+    useDownloadCache: true
+    useStaticCache: false
+    invalidateCaches: false
+
+
+functions:
+  game:
+    environment:
+      aws_access_key: ${env:AWS_ACCESS_KEY}
+      aws_secret_key: ${env:AWS_SECRET_KEY}
+      DYNAMODB_GAMES_TABLE_NAME: ${env:DYNAMODB_GAMES_TABLE_NAME}
+    handler: src.handlers.main_handler
+    events:
+      - websocket:
+          route: $connect
+          authorizer:
+            identitySource:
+              - route.request.header.Authorization
+            arn: ${env:AUTHORIZER_ARN}
+      - websocket:
+          route: $disconnect
+      - websocket:
+          route: $default

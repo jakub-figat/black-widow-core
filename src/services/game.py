@@ -12,11 +12,6 @@ from src.schemas.user import UserModel
 from src.services.exceptions import GameServiceException
 
 
-class ConnectionService:
-    def __init__(self) -> None:
-        pass
-
-
 class GameService:
     def __init__(
         self, game_data_access: GameDataAccess, user_data_access: UserDataAccess, lobby_data_access: LobbyDataAccess

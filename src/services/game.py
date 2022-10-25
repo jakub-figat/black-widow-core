@@ -16,27 +16,30 @@ class GameService:
     def __init__(
         self, game_data_access: GameDataAccess, user_data_access: UserDataAccess, lobby_data_access: LobbyDataAccess
     ) -> None:
-        self._game_data_access = game_data_access
-        self._user_data_access = user_data_access
-        self._lobby_data_access = lobby_data_access
+        self.game_data_access = game_data_access
+        self.user_data_access = user_data_access
+        self.lobby_data_access = lobby_data_access
 
     def create_lobby(self, user: UserModel, max_players: int = 3) -> LobbyModel:
         lobby = LobbyModel(lobby_id=str(uuid4()), users=[user.email], max_players=max_players)
-        self._lobby_data_access.save(model=lobby)
+        self.lobby_data_access.save(model=lobby)
 
         user.lobbies_ids.append(lobby.lobby_id)
-        self._user_data_access.save(model=user)
+        self.user_data_access.save(model=user)
 
         return lobby
 
     def add_user_to_lobby(self, lobby_id: str, user: UserModel) -> Optional[GameModel]:
         lobby_key = {"pk": "lobby", "sk": f"lobby#{lobby_id}"}
-        lobby = self._lobby_data_access.get(**lobby_key)
+        lobby = self.lobby_data_access.get(**lobby_key)
         if lobby is None:
             raise DoesNotExist(f"Lobby with id {lobby_id} does not exist.")
 
+        if user.email in lobby.users:
+            raise GameServiceException(f"User {user.email} is already in lobby {lobby.lobby_id}")
+
         if len(lobby.users) + 1 == lobby.max_players:  # lobby will be full, we can start the game
-            users = [self._user_data_access.get(pk=f"user", sk=f"user#{email}") for email in lobby.users]
+            users = [self.user_data_access.get(pk=f"user", sk=f"user#{email}") for email in lobby.users]
             game_id = str(uuid4())
             for user_ in users:
                 user_.lobbies_ids.remove(lobby_id)
@@ -44,24 +47,24 @@ class GameService:
             for user_ in users + [user]:
                 user_.games_ids.append(game_id)
 
-            self._user_data_access.bulk_save(models=users + [user])
-            self._lobby_data_access.delete(**lobby_key)
+            self.user_data_access.bulk_save(models=users + [user])
+            self.lobby_data_access.delete(**lobby_key)
 
             game = GameModel(
                 game_id=game_id, game=Game.start_game(users=[user.email for user in users] + [user.email])
             )
-            self._game_data_access.save(model=game)
+            self.game_data_access.save(model=game)
 
             return game
 
         lobby.users.append(user.email)
-        self._lobby_data_access.save(model=lobby)
+        self.lobby_data_access.save(model=lobby)
 
         user.lobbies_ids.append(lobby.lobby_id)
-        self._user_data_access.save(model=user)
+        self.user_data_access.save(model=user)
 
     def remove_user_from_lobby(self, lobby_id: str, user: UserModel) -> None:
-        lobby = self._lobby_data_access.get(pk="lobby", sk=f"lobby#{lobby_id}")
+        lobby = self.lobby_data_access.get(pk="lobby", sk=f"lobby#{lobby_id}")
         if lobby is None:
             raise DoesNotExist(f"Lobby with id {lobby_id} does not exist.")
 
@@ -71,18 +74,18 @@ class GameService:
         lobby.users.remove(user.email)
 
         if len(lobby.users) == 0:
-            self._lobby_data_access.delete(**lobby.key)
+            self.lobby_data_access.delete(**lobby.key)
         else:
-            self._lobby_data_access.save(model=lobby)
+            self.lobby_data_access.save(model=lobby)
 
         user.lobbies_ids.remove(lobby_id)
-        self._user_data_access.save(model=user)
+        self.user_data_access.save(model=user)
 
     def dispatch_game_action(self, game_id: str, user: UserModel, payload: dict[str, Any]) -> None:
-        game_model = self._game_data_access.get(pk=f"game#{game_id}", sk=f"game#{game_id}")
+        game_model = self.game_data_access.get(pk=f"game", sk=f"game#{game_id}")
         if game_model is None:
             raise DoesNotExist(f"Game with id {game_id} does not exist")
         payload = game_model.game.current_step.payload_class(**payload, user=user.email)
         game_model.game.dispatch(payload=payload)
 
-        self._game_data_access.save(model=game_model)
+        self.game_data_access.save(model=game_model)

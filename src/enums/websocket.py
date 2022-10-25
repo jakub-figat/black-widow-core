@@ -6,6 +6,7 @@ class Action(str, Enum):
     CREATE_LOBBY = "createLobby"
     JOIN_LOBBY = "joinLobby"
     LEAVE_LOBBY = "leaveLobby"
+    LIST_GAMES = "listGames"
 
 
 class RouteKey(str, Enum):
@@ -19,3 +20,4 @@ class PayloadType(str, Enum):
     VALIDATION_ERROR = "validationError"
     INVALID_PAYLOAD = "invalidPayload"
     LOBBIES_LIST = "lobbiesList"
+    GAMES_LIST = "gamesList"

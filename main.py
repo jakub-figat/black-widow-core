@@ -43,6 +43,7 @@ def main_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any
     websocket_handler = WebsocketHandler(
         user_data_access=user_data_access,
         lobby_data_access=lobby_data_access,
+        game_data_access=game_data_access,
         game_service=GameService(
             game_data_access=game_data_access, lobby_data_access=lobby_data_access, user_data_access=user_data_access
         ),
@@ -84,11 +85,19 @@ def main_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any
 
         elif action == Action.JOIN_LOBBY.value:
             payload = JoinLobbyPayload(**payload)
-            websocket_handler.join_lobby(payload=payload, user_id=user_id)
+            game_model = websocket_handler.join_lobby(payload=payload, user_id=user_id)
 
             lobbies = websocket_handler.lobby_data_access.get_many(pk="lobby")
             users = websocket_handler.user_data_access.get_many(pk="user")
             websocket_handler.send_lobbies_to_users(users=users, lobbies=lobbies)
+
+            if game_model is not None:
+                games = websocket_handler.game_data_access.get_many(pk="game")
+                websocket_handler.send_games_to_users(games=games, users=users)
+
+        elif action == Action.LIST_GAMES.value:
+            games = websocket_handler.game_data_access.get_many(pk="game")
+            websocket_handler.send_games_to_connection(games=games, connection_id=connection_id)
 
         elif action == Action.LEAVE_LOBBY.value:
             payload = LeaveLobbyPayload(**payload)

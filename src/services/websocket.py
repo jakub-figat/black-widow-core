@@ -3,9 +3,11 @@ from typing import Any, Optional
 
 from mypy_boto3_apigateway.client import APIGatewayClient
 
+from src.data_access.game import GameDataAccess
 from src.data_access.lobby import LobbyDataAccess
 from src.data_access.user import UserDataAccess
 from src.enums.websocket import PayloadType
+from src.schemas.game import GameModel
 from src.schemas.lobby import LobbyModel
 from src.schemas.user import UserModel
 from src.schemas.websocket import CreateLobbyPayload, JoinLobbyPayload, LeaveLobbyPayload
@@ -18,11 +20,13 @@ class WebsocketHandler:
         self,
         user_data_access: UserDataAccess,
         lobby_data_access: LobbyDataAccess,
+        game_data_access: GameDataAccess,
         game_service: GameService,
         api_gateway_client: APIGatewayClient,
     ) -> None:
         self.user_data_access = user_data_access
         self.lobby_data_access = lobby_data_access
+        self.game_data_access = game_data_access
         self.game_service = game_service
         self.api_gateway_client = api_gateway_client
 
@@ -70,18 +74,32 @@ class WebsocketHandler:
             connection_id=connection_id,
         )
 
+    def send_games_to_connection(self, *, games: list[GameModel], connection_id: str) -> None:
+        self.send_to_connection(
+            body={
+                "type": PayloadType.GAMES_LIST.value,
+                "games": [game.dict() for game in games],
+            },
+            connection_id=connection_id,
+        )
+
     def send_lobbies_to_users(self, *, users: list[UserModel], lobbies: list[LobbyModel]) -> None:
         for user in users:
             for connection_id in user.connection_ids:
                 self.send_lobbies_to_connection(connection_id=connection_id, lobbies=lobbies)
 
+    def send_games_to_users(self, *, users: list[UserModel], games: list[GameModel]) -> None:
+        for user in users:
+            for connection_id in user.connection_ids:
+                self.send_games_to_connection(connection_id=connection_id, games=games)
+
     def create_lobby(self, *, payload: CreateLobbyPayload, user_id: str) -> None:
         user = self.user_data_access.get(pk="user", sk=f"user#{user_id}")
         self.game_service.create_lobby(user=user, max_players=payload.max_players)
 
-    def join_lobby(self, *, payload: JoinLobbyPayload, user_id: str) -> None:
+    def join_lobby(self, *, payload: JoinLobbyPayload, user_id: str) -> Optional[GameModel]:
         user = self.user_data_access.get(pk="user", sk=f"user#{user_id}")
-        self.game_service.add_user_to_lobby(lobby_id=payload.lobby_id, user=user)
+        return self.game_service.add_user_to_lobby(lobby_id=payload.lobby_id, user=user)
 
     def leave_lobby(self, *, payload: LeaveLobbyPayload, user_id: str) -> None:
         user = self.user_data_access.get(pk="user", sk=f"user#{user_id}")

@@ -19,7 +19,7 @@ class GameModel(DynamoDBBaseModel):
         current_step_data = item["game"].pop("current_step")
         step_instance = step_mapping[item["game_step"]](**current_step_data)
         return cls(
-            game_id=item["PK"].split("#")[-1],
+            game_id=item["SK"].split("#")[-1],
             game=Game(**item["game"], current_step=step_instance),
         )
 
@@ -28,7 +28,7 @@ class GameModel(DynamoDBBaseModel):
 
     @property
     def pk(self) -> str:
-        return f"game#{self.game_id}"
+        return f"game"
 
     @property
     def sk(self) -> str:

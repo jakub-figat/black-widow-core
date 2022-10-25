@@ -9,3 +9,7 @@ class CreateLobbyPayload(BaseSchema):
 
 class LeaveLobbyPayload(BaseSchema):
     lobby_id: str = Field(..., min_length=8, max_length=40)
+
+
+class JoinLobbyPayload(BaseSchema):
+    lobby_id: str = Field(..., min_length=8, max_length=40)

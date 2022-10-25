@@ -11,6 +11,7 @@ from src.data_access.lobby import LobbyDataAccess
 from src.data_access.user import UserDataAccess
 from src.schemas.game import GameModel
 from src.schemas.user import UserModel
+from src.services.exceptions import GameServiceException
 from src.services.game import GameService
 
 
@@ -80,7 +81,7 @@ def test_game_service_remove_user_lobby_without_correct_user(game_service: GameS
     user = UserModel(email="someuserr@test.com")
     game_service._user_data_access.save(model=user)
     lobby = game_service.create_lobby(user=user)
-    with pytest.raises(DataAccessException, match=f"User doesnotexist@test.com not found in lobby {lobby.lobby_id}"):
+    with pytest.raises(GameServiceException, match=f"User doesnotexist@test.com not found in lobby {lobby.lobby_id}"):
         game_service.remove_user_from_lobby(lobby_id=lobby.lobby_id, user=UserModel(email="doesnotexist@test.com"))
 
 

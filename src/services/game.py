@@ -74,7 +74,11 @@ class GameService:
             raise GameServiceException(f"User {user.email} not found in lobby {lobby.lobby_id}")
 
         lobby.users.remove(user.email)
-        self._lobby_data_access.save(model=lobby)
+
+        if len(lobby.users) == 0:
+            self._lobby_data_access.delete(**lobby.key)
+        else:
+            self._lobby_data_access.save(model=lobby)
 
         user.lobbies_ids.remove(lobby_id)
         self._user_data_access.save(model=user)

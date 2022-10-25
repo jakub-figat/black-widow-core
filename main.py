@@ -12,12 +12,12 @@ from src.data_access.game import GameDataAccess
 from src.data_access.lobby import LobbyDataAccess
 from src.data_access.user import UserDataAccess
 from src.enums.websocket import Action, PayloadType, RouteKey
-from src.schemas.websocket import CreateLobbyPayload
+from src.schemas.websocket import CreateLobbyPayload, JoinLobbyPayload, LeaveLobbyPayload
 from src.services.exceptions import ServiceException
 from src.services.game import GameService
 from src.services.websocket import WebsocketHandler
 from src.settings import settings
-from src.utils import DateTimeUUIDJSONDecoder, get_response_from_pydantic_error
+from src.utils import DateTimeJSONDecoder, get_response_from_pydantic_error
 
 
 logger = Logger()
@@ -58,7 +58,7 @@ def main_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any
         return {"statusCode": 200}
 
     try:
-        body = json.loads(event.get("body"), cls=DateTimeUUIDJSONDecoder)
+        body = json.loads(event.get("body"), cls=DateTimeJSONDecoder)
     except (json.JSONDecodeError, TypeError):
         websocket_handler.send_to_connection(
             body={"detail": "Invalid JSON body"},
@@ -73,18 +73,48 @@ def main_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any
         if action == Action.LIST_LOBBIES.value:
             lobbies = lobby_data_access.get_many(pk="lobby")
             websocket_handler.send_lobbies_to_connection(lobbies=lobbies, connection_id=connection_id)
+
         elif action == Action.CREATE_LOBBY.value:
             payload = CreateLobbyPayload(**payload)
             websocket_handler.create_lobby(payload=payload, user_id=user_id)
+
+            lobbies = websocket_handler.lobby_data_access.get_many(pk="lobby")
+            users = websocket_handler.user_data_access.get_many(pk="user")
+            websocket_handler.send_lobbies_to_users(users=users, lobbies=lobbies)
+
+        elif action == Action.JOIN_LOBBY.value:
+            payload = JoinLobbyPayload(**payload)
+            websocket_handler.join_lobby(payload=payload, user_id=user_id)
+
+            lobbies = websocket_handler.lobby_data_access.get_many(pk="lobby")
+            users = websocket_handler.user_data_access.get_many(pk="user")
+            websocket_handler.send_lobbies_to_users(users=users, lobbies=lobbies)
+
+        elif action == Action.LEAVE_LOBBY.value:
+            payload = LeaveLobbyPayload(**payload)
+            websocket_handler.leave_lobby(payload=payload, user_id=user_id)
+            websocket_handler.send_to_connection(
+                body={"type": PayloadType.INFO.value, "detail": f"You've left lobby {payload.lobby_id}"},
+                connection_id=connection_id,
+            )
+
+            lobbies = websocket_handler.lobby_data_access.get_many(pk="lobby")
+            users = websocket_handler.user_data_access.get_many(pk="user")
+            websocket_handler.send_lobbies_to_users(users=users, lobbies=lobbies)
+
         else:
             websocket_handler.send_to_connection(
                 body={"type": PayloadType.INVALID_PAYLOAD.value, "detail": f"No action named {action}"},
                 connection_id=connection_id,
             )
+
     except ValidationError as exc:
         websocket_handler.send_to_connection(body=get_response_from_pydantic_error(exc), connection_id=connection_id)
         return {"statusCode": 400}
+
     except (DataAccessException, ServiceException) as exc:
-        websocket_handler.send_to_connection(body={"detail": str(exc)}, connection_id=connection_id)
+        websocket_handler.send_to_connection(
+            body={"type": PayloadType.ERROR.value, "detail": str(exc)}, connection_id=connection_id
+        )
 
     return {"statusCode": 200}

@@ -1,9 +1,13 @@
+import datetime as dt
 import json
-from typing import Any, Optional
+from functools import wraps
+from typing import Any, Callable, Optional, Type
+from uuid import UUID
 
 from mypy_boto3_apigateway import APIGatewayClient
+from pydantic import ValidationError
 
-from src.data_access import user_data_access
+from src.schemas.base import BaseSchema
 from src.schemas.user import UserModel
 
 
@@ -15,18 +19,34 @@ def is_list_contained_by_list(sublist: list[Any], list_container: list[Any]) -> 
     return True
 
 
-def send_message_to_users(
-    message: str,
-    users: list[UserModel],
-    api_gateway_client: APIGatewayClient,
-    excluded_connection: Optional[str] = None,
-) -> None:
-    for user in users:
-        for user_connection_id in user.connection_ids:
-            if user_connection_id == excluded_connection:
-                continue
+class DateTimeUUIDJSONEncoder(json.JSONEncoder):
+    def default(self, obj: Any) -> Any:
+        if isinstance(obj, (dt.date, dt.datetime)):
+            return obj.isoformat()
 
-            api_gateway_client.post_to_connection(
-                Data=json.dumps({"message": message}).encode("utf-8"),
-                ConnectionId=user_connection_id,
-            )
+        if isinstance(obj, UUID):
+            return str(obj)
+
+        return super().default(obj)
+
+
+class DateTimeUUIDJSONDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, source: dict[str, Any]) -> dict[str, Any]:
+        for key, value in source.items():
+            if isinstance(value, str):
+                try:
+                    source[key] = dt.datetime.fromisoformat(value)
+                except:  # NOQA
+                    pass
+                try:
+                    source[key] = UUID(value)
+                except:  # NOQA
+                    pass
+        return source
+
+
+def get_response_from_pydantic_error(error: ValidationError) -> dict[str, Any]:
+    return {"detail": error.errors()}

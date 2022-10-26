@@ -10,7 +10,7 @@ from src.enums.websocket import PayloadType
 from src.schemas.game import GameModel
 from src.schemas.lobby import LobbyModel
 from src.schemas.user import UserModel
-from src.schemas.websocket import CreateLobbyPayload, JoinLobbyPayload, LeaveLobbyPayload
+from src.schemas.websocket import CreateLobbyPayload, GamePreviewSchema, JoinLobbyPayload, LeaveLobbyPayload
 from src.services.game import GameService
 from src.utils import DateTimeJSONEncoder
 
@@ -65,7 +65,7 @@ class WebsocketHandler:
         user.connection_ids.remove(connection_id)
         self.user_data_access.save(model=user)
 
-    def send_lobbies_to_connection(self, *, lobbies: list[LobbyModel], connection_id: str) -> None:
+    def send_lobbies_list_to_connection(self, *, lobbies: list[LobbyModel], connection_id: str) -> None:
         self.send_to_connection(
             body={
                 "type": PayloadType.LOBBIES_LIST.value,
@@ -74,36 +74,58 @@ class WebsocketHandler:
             connection_id=connection_id,
         )
 
-    def send_games_to_connection(self, *, games: list[GameModel], connection_id: str) -> None:
+    def send_lobby_updated_to_users(self, *, users: list[UserModel], lobby: LobbyModel) -> None:
+        for user in users:
+            for connection_id in user.connection_ids:
+                self.send_to_connection(
+                    body={"type": PayloadType.LOBBY_UPDATED.value, "lobby": lobby.dict()}, connection_id=connection_id
+                )
+
+    def send_lobby_deleted_to_users(self, *, users: list[UserModel], lobby_id: str) -> None:
+        for user in users:
+            for connection_id in user.connection_ids:
+                self.send_to_connection(
+                    body={"type": PayloadType.LOBBY_DELETED.value, "lobbyId": lobby_id}, connection_id=connection_id
+                )
+
+    def send_games_preview_to_connection(self, *, games: list[GameModel], connection_id: str) -> None:
         self.send_to_connection(
             body={
                 "type": PayloadType.GAMES_LIST.value,
-                "games": [game.dict() for game in games],
+                "games": [GamePreviewSchema.from_game(game=game) for game in games],
             },
             connection_id=connection_id,
         )
 
-    def send_lobbies_to_users(self, *, users: list[UserModel], lobbies: list[LobbyModel]) -> None:
+    def send_game_preview_updated_to_users(self, *, users: list[UserModel], game: GameModel) -> None:
         for user in users:
             for connection_id in user.connection_ids:
-                self.send_lobbies_to_connection(connection_id=connection_id, lobbies=lobbies)
+                self.send_to_connection(
+                    body={"type": PayloadType.GAME_UPDATED, "game": GamePreviewSchema.from_game(game=game)},
+                    connection_id=connection_id,
+                )
 
-    def send_games_to_users(self, *, users: list[UserModel], games: list[GameModel]) -> None:
+    def send_game_preview_deleted_to_users(self, *, users: list[UserModel], game_id: str) -> None:
         for user in users:
             for connection_id in user.connection_ids:
-                self.send_games_to_connection(connection_id=connection_id, games=games)
+                self.send_to_connection(
+                    body={"type": PayloadType.GAME_UPDATED, "gameId": game_id}, connection_id=connection_id
+                )
 
-    def create_lobby(self, *, payload: CreateLobbyPayload, user_id: str) -> None:
+    def send_game_detail_to_user(self, *, user: UserModel, game: GameModel) -> None:
+        pass
+
+    def create_lobby(self, *, payload: CreateLobbyPayload, user_id: str) -> LobbyModel:
         user = self.user_data_access.get(pk="user", sk=f"user#{user_id}")
-        self.game_service.create_lobby(user=user, max_players=payload.max_players)
+        return self.game_service.create_lobby(user=user, max_players=payload.max_players)
 
     def join_lobby(self, *, payload: JoinLobbyPayload, user_id: str) -> Optional[GameModel]:
         user = self.user_data_access.get(pk="user", sk=f"user#{user_id}")
         return self.game_service.add_user_to_lobby(lobby_id=payload.lobby_id, user=user)
 
-    def leave_lobby(self, *, payload: LeaveLobbyPayload, user_id: str) -> None:
+    def leave_lobby(self, *, payload: LeaveLobbyPayload, user_id: str) -> bool:
         user = self.user_data_access.get(pk="user", sk=f"user#{user_id}")
-        self.game_service.remove_user_from_lobby(lobby_id=payload.lobby_id, user=user)
+        return self.game_service.remove_user_from_lobby(lobby_id=payload.lobby_id, user=user)
 
     def handle_user_join_game(self) -> None:
         pass
@@ -113,3 +135,6 @@ class WebsocketHandler:
 
     def handle_user_leave_game(self) -> None:
         pass
+
+
+# TODO: user info

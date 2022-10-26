@@ -63,7 +63,7 @@ class GameService:
         user.lobbies_ids.append(lobby.lobby_id)
         self.user_data_access.save(model=user)
 
-    def remove_user_from_lobby(self, lobby_id: str, user: UserModel) -> None:
+    def remove_user_from_lobby(self, lobby_id: str, user: UserModel) -> bool:
         lobby = self.lobby_data_access.get(pk="lobby", sk=f"lobby#{lobby_id}")
         if lobby is None:
             raise DoesNotExist(f"Lobby with id {lobby_id} does not exist.")
@@ -80,6 +80,8 @@ class GameService:
 
         user.lobbies_ids.remove(lobby_id)
         self.user_data_access.save(model=user)
+
+        return len(lobby.users) == 0
 
     def dispatch_game_action(self, game_id: str, user: UserModel, payload: dict[str, Any]) -> None:
         game_model = self.game_data_access.get(pk=f"game", sk=f"game#{game_id}")

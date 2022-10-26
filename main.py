@@ -73,43 +73,41 @@ def main_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any
     try:
         if action == Action.LIST_LOBBIES.value:
             lobbies = lobby_data_access.get_many(pk="lobby")
-            websocket_handler.send_lobbies_to_connection(lobbies=lobbies, connection_id=connection_id)
+            websocket_handler.send_lobbies_list_to_connection(lobbies=lobbies, connection_id=connection_id)
 
         elif action == Action.CREATE_LOBBY.value:
             payload = CreateLobbyPayload(**payload)
-            websocket_handler.create_lobby(payload=payload, user_id=user_id)
+            lobby = websocket_handler.create_lobby(payload=payload, user_id=user_id)
 
-            lobbies = websocket_handler.lobby_data_access.get_many(pk="lobby")
             users = websocket_handler.user_data_access.get_many(pk="user")
-            websocket_handler.send_lobbies_to_users(users=users, lobbies=lobbies)
+            websocket_handler.send_lobby_updated_to_users(users=users, lobby=lobby)
 
         elif action == Action.JOIN_LOBBY.value:
             payload = JoinLobbyPayload(**payload)
             game_model = websocket_handler.join_lobby(payload=payload, user_id=user_id)
-
-            lobbies = websocket_handler.lobby_data_access.get_many(pk="lobby")
             users = websocket_handler.user_data_access.get_many(pk="user")
-            websocket_handler.send_lobbies_to_users(users=users, lobbies=lobbies)
 
             if game_model is not None:
-                games = websocket_handler.game_data_access.get_many(pk="game")
-                websocket_handler.send_games_to_users(games=games, users=users)
+                websocket_handler.send_game_preview_updated_to_users(users=users, game=game_model)
+                websocket_handler.send_lobby_deleted_to_users(users=users, lobby_id=payload.lobby_id)
+            else:
+                lobby = websocket_handler.lobby_data_access.get(pk="lobby", sk=f"lobby#{payload.lobby_id}")
+                websocket_handler.send_lobby_updated_to_users(users=users, lobby=lobby)
 
         elif action == Action.LIST_GAMES.value:
             games = websocket_handler.game_data_access.get_many(pk="game")
-            websocket_handler.send_games_to_connection(games=games, connection_id=connection_id)
+            websocket_handler.send_games_preview_to_connection(games=games, connection_id=connection_id)
 
         elif action == Action.LEAVE_LOBBY.value:
             payload = LeaveLobbyPayload(**payload)
-            websocket_handler.leave_lobby(payload=payload, user_id=user_id)
-            websocket_handler.send_to_connection(
-                body={"type": PayloadType.INFO.value, "detail": f"You've left lobby {payload.lobby_id}"},
-                connection_id=connection_id,
-            )
+            deleted = websocket_handler.leave_lobby(payload=payload, user_id=user_id)
 
-            lobbies = websocket_handler.lobby_data_access.get_many(pk="lobby")
             users = websocket_handler.user_data_access.get_many(pk="user")
-            websocket_handler.send_lobbies_to_users(users=users, lobbies=lobbies)
+            if deleted:
+                websocket_handler.send_lobby_deleted_to_users(users=users, lobby_id=payload.lobby_id)
+            else:
+                lobby = websocket_handler.lobby_data_access.get(pk="lobby", sk=f"lobby#{payload.lobby_id}")
+                websocket_handler.send_lobby_updated_to_users(users=users, lobby=lobby)
 
         else:
             websocket_handler.send_to_connection(

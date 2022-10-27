@@ -9,6 +9,7 @@ from src.data_access.user import UserDataAccess
 from src.schemas.game import GameModel
 from src.schemas.lobby import LobbyModel
 from src.schemas.user import UserModel
+from src.schemas.websocket import GetGameDetailPayload
 from src.services.exceptions import GameServiceException
 
 
@@ -82,6 +83,16 @@ class GameService:
         self.user_data_access.save(model=user)
 
         return len(lobby.users) == 0
+
+    def get_game_with_user(self, game_id: str, user_id: str) -> GameModel:
+        game = self.game_data_access.get(pk="game", sk=f"game#{game_id}")
+        if game is None:
+            raise DoesNotExist(f"You do not participate in game with id {game_id}")
+
+        if user_id not in game.game.state.users:
+            raise GameServiceException(f"You do not participate in game with id {game_id}")
+
+        return game
 
     def dispatch_game_action(self, game_id: str, user: UserModel, payload: dict[str, Any]) -> None:
         game_model = self.game_data_access.get(pk=f"game", sk=f"game#{game_id}")

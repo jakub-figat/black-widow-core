@@ -3,6 +3,7 @@ from typing import Any, Optional
 
 from mypy_boto3_apigateway.client import APIGatewayClient
 
+from src.data_access.exceptions import DoesNotExist
 from src.data_access.game import GameDataAccess
 from src.data_access.lobby import LobbyDataAccess
 from src.data_access.user import UserDataAccess
@@ -10,7 +11,15 @@ from src.enums.websocket import PayloadType
 from src.schemas.game import GameModel
 from src.schemas.lobby import LobbyModel
 from src.schemas.user import UserModel
-from src.schemas.websocket import CreateLobbyPayload, GamePreviewSchema, JoinLobbyPayload, LeaveLobbyPayload
+from src.schemas.websocket import (
+    CreateLobbyPayload,
+    GameDetailSchema,
+    GamePreviewSchema,
+    GetGameDetailPayload,
+    JoinLobbyPayload,
+    LeaveLobbyPayload,
+)
+from src.services.exceptions import GameServiceException
 from src.services.game import GameService
 from src.utils import DateTimeJSONEncoder
 
@@ -92,7 +101,7 @@ class WebsocketHandler:
         self.send_to_connection(
             body={
                 "type": PayloadType.GAMES_LIST.value,
-                "games": [GamePreviewSchema.from_game(game=game) for game in games],
+                "games": [GamePreviewSchema.from_game(game=game).dict() for game in games],
             },
             connection_id=connection_id,
         )
@@ -112,8 +121,14 @@ class WebsocketHandler:
                     body={"type": PayloadType.GAME_UPDATED, "gameId": game_id}, connection_id=connection_id
                 )
 
-    def send_game_detail_to_user(self, *, user: UserModel, game: GameModel) -> None:
-        pass
+    def send_game_detail_to_connection(self, *, game: GameModel, user_id: str, connection_id: str) -> None:
+        self.send_to_connection(
+            body={
+                "type": PayloadType.GAME_DETAIL,
+                "game": GameDetailSchema.from_game(game=game, user_id=user_id).dict(),
+            },
+            connection_id=connection_id,
+        )
 
     def create_lobby(self, *, payload: CreateLobbyPayload, user_id: str) -> LobbyModel:
         user = self.user_data_access.get(pk="user", sk=f"user#{user_id}")
@@ -127,14 +142,8 @@ class WebsocketHandler:
         user = self.user_data_access.get(pk="user", sk=f"user#{user_id}")
         return self.game_service.remove_user_from_lobby(lobby_id=payload.lobby_id, user=user)
 
-    def handle_user_join_game(self) -> None:
-        pass
+    def get_game_detail(self, *, payload: GetGameDetailPayload, user_id: str) -> GameModel:
+        return self.game_service.get_game_with_user(game_id=payload.game_id, user_id=user_id)
 
     def handle_user_send_game_payload(self) -> None:
         pass
-
-    def handle_user_leave_game(self) -> None:
-        pass
-
-
-# TODO: user info

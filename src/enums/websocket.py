@@ -7,6 +7,8 @@ class Action(str, Enum):
     JOIN_LOBBY = "joinLobby"
     LEAVE_LOBBY = "leaveLobby"
     LIST_GAMES = "listGames"
+    GET_GAME_DETAIL = "getGameDetail"
+    MAKE_MOVE = "makeMove"
 
 
 class RouteKey(str, Enum):
@@ -26,3 +28,4 @@ class PayloadType(str, Enum):
     GAME_UPDATED = "gameUpdated"
     GAME_DELETED = "gameDeleted"
     GAME_DETAIL = "gameDetail"
+    GAME_DETAIL_UPDATED = "gameDetailUpdated"

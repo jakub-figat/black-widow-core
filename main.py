@@ -12,7 +12,7 @@ from src.data_access.game import GameDataAccess
 from src.data_access.lobby import LobbyDataAccess
 from src.data_access.user import UserDataAccess
 from src.enums.websocket import Action, PayloadType, RouteKey
-from src.schemas.websocket import CreateLobbyPayload, JoinLobbyPayload, LeaveLobbyPayload
+from src.schemas.websocket import CreateLobbyPayload, GetGameDetailPayload, JoinLobbyPayload, LeaveLobbyPayload
 from src.services.exceptions import ServiceException
 from src.services.game import GameService
 from src.services.websocket import WebsocketHandler
@@ -94,10 +94,6 @@ def main_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any
                 lobby = websocket_handler.lobby_data_access.get(pk="lobby", sk=f"lobby#{payload.lobby_id}")
                 websocket_handler.send_lobby_updated_to_users(users=users, lobby=lobby)
 
-        elif action == Action.LIST_GAMES.value:
-            games = websocket_handler.game_data_access.get_many(pk="game")
-            websocket_handler.send_games_preview_to_connection(games=games, connection_id=connection_id)
-
         elif action == Action.LEAVE_LOBBY.value:
             payload = LeaveLobbyPayload(**payload)
             deleted = websocket_handler.leave_lobby(payload=payload, user_id=user_id)
@@ -108,6 +104,15 @@ def main_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any
             else:
                 lobby = websocket_handler.lobby_data_access.get(pk="lobby", sk=f"lobby#{payload.lobby_id}")
                 websocket_handler.send_lobby_updated_to_users(users=users, lobby=lobby)
+
+        elif action == Action.LIST_GAMES.value:
+            games = websocket_handler.game_data_access.get_many(pk="game")
+            websocket_handler.send_games_preview_to_connection(games=games, connection_id=connection_id)
+
+        elif action == Action.GET_GAME_DETAIL:
+            payload = GetGameDetailPayload(**payload)
+            game = websocket_handler.get_game_detail(payload=payload, user_id=user_id)
+            websocket_handler.send_game_detail_to_connection(game=game, user_id=user_id, connection_id=connection_id)
 
         else:
             websocket_handler.send_to_connection(

@@ -4,7 +4,9 @@ from pydantic import BaseModel, Field
 
 from src.core.cards import Card
 from src.core.consts import USER
-from src.core.game import GameSettings
+from src.core.game import Game, GameSettings
+from src.core.steps import CardExchangeStep, step_mapping
+from src.core.types import CardExchangeState
 from src.schemas.base import BaseSchema
 from src.schemas.game import GameModel
 
@@ -14,11 +16,15 @@ class CreateLobbyPayload(BaseSchema):
 
 
 class LeaveLobbyPayload(BaseSchema):
-    lobby_id: str = Field(..., min_length=8, max_length=40)
+    lobby_id: str = Field(..., min_length=36, max_length=36)
 
 
 class JoinLobbyPayload(BaseSchema):
-    lobby_id: str = Field(..., min_length=8, max_length=40)
+    lobby_id: str = Field(..., min_length=36, max_length=36)
+
+
+class GetGameDetailPayload(BaseSchema):
+    game_id: str = Field(..., min_length=36, max_length=36)
 
 
 class GamePreviewSchema(BaseSchema):
@@ -36,7 +42,7 @@ class GameDetailState(BaseSchema):
     current_user: Optional[USER] = None
     users: list[USER]
     scores: dict[USER, int]
-    deck: dict[USER, list[Card]]
+    deck: list[Card]
 
 
 class GameDetailStep(BaseSchema):
@@ -46,6 +52,24 @@ class GameDetailStep(BaseSchema):
 class GameDetailSchema(BaseSchema):
     game_id: str
     game_settings: GameSettings
-    users: list[str]
     state: GameDetailState
-    current_step: GameDetailState
+    current_step: GameDetailStep
+
+    @classmethod
+    def from_game(cls, game: GameModel, user_id: str) -> "GameDetailSchema":
+        state_dict = game.game.state.dict()
+        state_dict["deck"] = state_dict.pop("decks")[user_id]
+        obfuscated_state = GameDetailState(**state_dict)
+
+        obfuscated_step = None
+        if isinstance(step_mapping[game.game_step], CardExchangeStep):
+            local_state_dict = game.game.current_step.local_state.dict()
+            local_state_dict["cards_to_exchange"] = local_state_dict.pop("cards_to_exchange")[user_id]
+            obfuscated_step = GameDetailStep(local_state=CardExchangeState(**local_state_dict))
+
+        return cls(
+            game_id=game.game_id,
+            game_settings=game.game.settings,
+            state=obfuscated_state,
+            current_step=obfuscated_step or game.game.current_step,
+        )

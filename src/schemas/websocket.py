@@ -1,11 +1,11 @@
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
 from src.core.cards import Card
 from src.core.consts import USER
 from src.core.game import Game, GameSettings
-from src.core.steps import CardExchangeStep, step_mapping
+from src.core.steps import STEP_MAPPING, CardExchangeStep
 from src.core.types import CardExchangeState
 from src.schemas.base import BaseSchema
 from src.schemas.game import GameModel
@@ -25,6 +25,11 @@ class JoinLobbyPayload(BaseSchema):
 
 class GetGameDetailPayload(BaseSchema):
     game_id: str = Field(..., min_length=36, max_length=36)
+
+
+class MakeMovePayload(BaseSchema):
+    game_id: str = Field(..., min_length=36, max_length=36)
+    game_payload: dict[str, Any]
 
 
 class GamePreviewSchema(BaseSchema):
@@ -62,7 +67,7 @@ class GameDetailSchema(BaseSchema):
         obfuscated_state = GameDetailState(**state_dict)
 
         obfuscated_step = None
-        if isinstance(step_mapping[game.game_step], CardExchangeStep):
+        if isinstance(STEP_MAPPING[game.game_step], CardExchangeStep):
             local_state_dict = game.game.current_step.local_state.dict()
             local_state_dict["cards_to_exchange"] = local_state_dict.pop("cards_to_exchange")[user_id]
             obfuscated_step = GameDetailStep(local_state=CardExchangeState(**local_state_dict))

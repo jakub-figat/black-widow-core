@@ -8,8 +8,8 @@ from src.core.steps import CardExchangePayload, CardExchangeState, CardExchangeS
 from src.utils import is_list_contained_by_list
 
 
-def _get_card_for_exchange(decks: dict[USER, list[Card]]) -> list[list[Card]]:
-    return [cards[:3] for cards in decks.values()]
+def _get_card_for_exchange(decks: dict[USER, list[Card]]) -> list[list[str]]:
+    return [[str(card) for card in cards[:3]] for cards in decks.values()]
 
 
 @pytest.fixture
@@ -25,7 +25,9 @@ def initial_game_state_with_four_users() -> GameState:
 def test_validate_payload(initial_game_state_with_four_users: GameState) -> None:
     step = CardExchangeStep(game_state=initial_game_state_with_four_users)
     decks = initial_game_state_with_four_users.decks
-    payload = CardExchangePayload(user="user_1", cards=decks["user_1"][:2] + decks["user_2"][:1])
+    payload = CardExchangePayload(
+        user="user_1", cards=[str(card) for card in decks["user_1"][:2] + decks["user_2"][:1]]
+    )
     with pytest.raises(InvalidPayloadBody):
         step.validate_payload(payload=payload)
 
@@ -44,7 +46,9 @@ def test_dispatch_payload_when_not_all_three_players_had_put_cards_for_exchange(
     state_2 = step.dispatch_payload(payload=payload_2)
 
     assert state_1 == state_2 == initial_game_state_with_three_users
-    assert step.local_state.cards_to_exchange == {"user_1": cards_for_exchange_1, "user_2": cards_for_exchange_2}
+
+    cards_for_exchange = [cards[:3] for cards in initial_game_state_with_three_users.decks.values()]
+    assert step.local_state.cards_to_exchange == {"user_1": cards_for_exchange[0], "user_2": cards_for_exchange[1]}
 
 
 def test_dispatch_payload_when_not_all_four_players_had_put_cards_for_exchange(
@@ -63,10 +67,12 @@ def test_dispatch_payload_when_not_all_four_players_had_put_cards_for_exchange(
     state_3 = step.dispatch_payload(payload=payload_3)
 
     assert state_1 == state_2 == state_3 == initial_game_state_with_four_users
+
+    cards_for_exchange = [cards[:3] for cards in initial_game_state_with_four_users.decks.values()]
     assert step.local_state.cards_to_exchange == {
-        "user_1": cards_for_exchange_1,
-        "user_2": cards_for_exchange_2,
-        "user_3": cards_for_exchange_3,
+        "user_1": cards_for_exchange[0],
+        "user_2": cards_for_exchange[1],
+        "user_3": cards_for_exchange[2],
     }
 
 
@@ -87,7 +93,9 @@ def test_get_decks_with_cards_exchanged() -> None:
             cards_to_exchange={"user_1": [SPADE_2, SPADE_3, SPADE_4], "user_2": [HEART_2, HEART_3, HEART_4]}
         ),
     )
-    step.dispatch_payload(payload=CardExchangePayload(user="user_3", cards=[DIAMOND_2, DIAMOND_3, DIAMOND_4]))
+    step.dispatch_payload(
+        payload=CardExchangePayload(user="user_3", cards=[str(DIAMOND_2), str(DIAMOND_3), str(DIAMOND_4)])
+    )
 
     # pylint: disable=protected-access
     decks = step._get_decks_with_cards_exchanged()
@@ -117,9 +125,15 @@ def test_dispatch_payload_when_all_three_players_had_put_cards_for_exchange(
     assert not step.local_state.cards_to_exchange
     assert new_state != initial_game_state_with_three_users
 
-    assert is_list_contained_by_list(sublist=cards_for_exchange_1, list_container=new_state.decks["user_2"])
-    assert is_list_contained_by_list(sublist=cards_for_exchange_2, list_container=new_state.decks["user_3"])
-    assert is_list_contained_by_list(sublist=cards_for_exchange_3, list_container=new_state.decks["user_1"])
+    assert is_list_contained_by_list(
+        sublist=cards_for_exchange_1, list_container=[str(card) for card in new_state.decks["user_2"]]
+    )
+    assert is_list_contained_by_list(
+        sublist=cards_for_exchange_2, list_container=[str(card) for card in new_state.decks["user_3"]]
+    )
+    assert is_list_contained_by_list(
+        sublist=cards_for_exchange_3, list_container=[str(card) for card in new_state.decks["user_1"]]
+    )
 
 
 def test_dispatch_payload_when_all_four_players_had_put_cards_for_exchange(
@@ -143,10 +157,18 @@ def test_dispatch_payload_when_all_four_players_had_put_cards_for_exchange(
     assert not step.local_state.cards_to_exchange
     assert new_state != initial_game_state_with_four_users
 
-    assert is_list_contained_by_list(sublist=cards_for_exchange_1, list_container=new_state.decks["user_2"])
-    assert is_list_contained_by_list(sublist=cards_for_exchange_2, list_container=new_state.decks["user_3"])
-    assert is_list_contained_by_list(sublist=cards_for_exchange_3, list_container=new_state.decks["user_4"])
-    assert is_list_contained_by_list(sublist=cards_for_exchange_4, list_container=new_state.decks["user_1"])
+    assert is_list_contained_by_list(
+        sublist=cards_for_exchange_1, list_container=[str(card) for card in new_state.decks["user_2"]]
+    )
+    assert is_list_contained_by_list(
+        sublist=cards_for_exchange_2, list_container=[str(card) for card in new_state.decks["user_3"]]
+    )
+    assert is_list_contained_by_list(
+        sublist=cards_for_exchange_3, list_container=[str(card) for card in new_state.decks["user_4"]]
+    )
+    assert is_list_contained_by_list(
+        sublist=cards_for_exchange_4, list_container=[str(card) for card in new_state.decks["user_1"]]
+    )
 
 
 def test_should_switch_to_next_step(initial_game_state_with_three_users: GameState) -> None:

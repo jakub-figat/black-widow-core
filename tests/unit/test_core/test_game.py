@@ -14,8 +14,8 @@ from src.core.steps import CardExchangeStep, FinishedStep, FirstRoundStep, InPro
 from src.core.types import CardExchangePayload, FinishedPayload, RoundPayload, RoundState
 
 
-def _get_card_for_exchange(decks: dict[USER, list[cards.Card]]) -> list[list[cards.Card]]:
-    return [cards[:3] for cards in decks.values()]
+def _get_card_for_exchange(decks: dict[USER, list[cards.Card]]) -> list[list[str]]:
+    return [[str(card) for card in cards[:3]] for cards in decks.values()]
 
 
 @pytest.fixture
@@ -99,9 +99,9 @@ def test_exchange_cards() -> None:
     game = Game.start_game(users=["user_1", "user_2", "user_3"])
     cards_for_exchange_1, cards_for_exchange_2, cards_for_exchange_3 = _get_card_for_exchange(decks=game.state.decks)
 
-    payload_1 = CardExchangePayload(user="user_1", cards=cards_for_exchange_1)
-    payload_2 = CardExchangePayload(user="user_2", cards=cards_for_exchange_2)
-    payload_3 = CardExchangePayload(user="user_3", cards=cards_for_exchange_3)
+    payload_1 = CardExchangePayload(user="user_1", cards=[str(card) for card in cards_for_exchange_1])
+    payload_2 = CardExchangePayload(user="user_2", cards=[str(card) for card in cards_for_exchange_2])
+    payload_3 = CardExchangePayload(user="user_3", cards=[str(card) for card in cards_for_exchange_3])
 
     game.dispatch(payload=payload_1)
     game.dispatch(payload=payload_2)
@@ -127,7 +127,7 @@ def test_exchange_cards_with_invalid_payload() -> None:
 def test_place_card_in_first_round(game_with_first_round: Game) -> None:
     user = game_with_first_round.state.current_user
     card = game_with_first_round.state.decks[user][-1]
-    payload = RoundPayload(user=user, card=card)
+    payload = RoundPayload(user=user, card=str(card))
 
     game_with_first_round.dispatch(payload=payload)
 
@@ -144,19 +144,19 @@ def test_place_card_in_first_round(game_with_first_round: Game) -> None:
 
 
 def test_place_card_in_ending_round(game_with_decks_ending: Game) -> None:
-    payload_1 = RoundPayload(user="user_1", card=game_with_decks_ending.state.decks["user_1"][0])
-    payload_2 = RoundPayload(user="user_2", card=game_with_decks_ending.state.decks["user_2"][0])
-    payload_3 = RoundPayload(user="user_3", card=game_with_decks_ending.state.decks["user_3"][0])
-    payload_4 = RoundPayload(user="user_4", card=game_with_decks_ending.state.decks["user_4"][0])
+    payload_1 = RoundPayload(user="user_1", card=str(game_with_decks_ending.state.decks["user_1"][0]))
+    payload_2 = RoundPayload(user="user_2", card=str(game_with_decks_ending.state.decks["user_2"][0]))
+    payload_3 = RoundPayload(user="user_3", card=str(game_with_decks_ending.state.decks["user_3"][0]))
+    payload_4 = RoundPayload(user="user_4", card=str(game_with_decks_ending.state.decks["user_4"][0]))
     game_with_decks_ending.dispatch(payload=payload_1)
     game_with_decks_ending.dispatch(payload=payload_2)
     game_with_decks_ending.dispatch(payload=payload_3)
     game_with_decks_ending.dispatch(payload=payload_4)
 
-    payload_2 = RoundPayload(user="user_2", card=game_with_decks_ending.state.decks["user_2"][0])
-    payload_3 = RoundPayload(user="user_3", card=game_with_decks_ending.state.decks["user_3"][0])
-    payload_4 = RoundPayload(user="user_4", card=game_with_decks_ending.state.decks["user_4"][0])
-    payload_1 = RoundPayload(user="user_1", card=game_with_decks_ending.state.decks["user_1"][0])
+    payload_2 = RoundPayload(user="user_2", card=str(game_with_decks_ending.state.decks["user_2"][0]))
+    payload_3 = RoundPayload(user="user_3", card=str(game_with_decks_ending.state.decks["user_3"][0]))
+    payload_4 = RoundPayload(user="user_4", card=str(game_with_decks_ending.state.decks["user_4"][0]))
+    payload_1 = RoundPayload(user="user_1", card=str(game_with_decks_ending.state.decks["user_1"][0]))
     game_with_decks_ending.dispatch(payload=payload_2)
     game_with_decks_ending.dispatch(payload=payload_3)
     game_with_decks_ending.dispatch(payload=payload_4)
@@ -178,19 +178,19 @@ def test_place_card_in_ending_round_when_max_score_is_reached(
     game_with_decks_ending: Game, caplog: LogCaptureFixture
 ) -> None:
     game_with_decks_ending.state.scores["user_2"] = 99
-    payload_1 = RoundPayload(user="user_1", card=game_with_decks_ending.state.decks["user_1"][0])
-    payload_2 = RoundPayload(user="user_2", card=game_with_decks_ending.state.decks["user_2"][0])
-    payload_3 = RoundPayload(user="user_3", card=game_with_decks_ending.state.decks["user_3"][0])
-    payload_4 = RoundPayload(user="user_4", card=game_with_decks_ending.state.decks["user_4"][0])
+    payload_1 = RoundPayload(user="user_1", card=str(game_with_decks_ending.state.decks["user_1"][0]))
+    payload_2 = RoundPayload(user="user_2", card=str(game_with_decks_ending.state.decks["user_2"][0]))
+    payload_3 = RoundPayload(user="user_3", card=str(game_with_decks_ending.state.decks["user_3"][0]))
+    payload_4 = RoundPayload(user="user_4", card=str(game_with_decks_ending.state.decks["user_4"][0]))
     game_with_decks_ending.dispatch(payload=payload_1)
     game_with_decks_ending.dispatch(payload=payload_2)
     game_with_decks_ending.dispatch(payload=payload_3)
     game_with_decks_ending.dispatch(payload=payload_4)
 
-    payload_2 = RoundPayload(user="user_2", card=game_with_decks_ending.state.decks["user_2"][0])
-    payload_3 = RoundPayload(user="user_3", card=game_with_decks_ending.state.decks["user_3"][0])
-    payload_4 = RoundPayload(user="user_4", card=game_with_decks_ending.state.decks["user_4"][0])
-    payload_1 = RoundPayload(user="user_1", card=game_with_decks_ending.state.decks["user_1"][0])
+    payload_2 = RoundPayload(user="user_2", card=str(game_with_decks_ending.state.decks["user_2"][0]))
+    payload_3 = RoundPayload(user="user_3", card=str(game_with_decks_ending.state.decks["user_3"][0]))
+    payload_4 = RoundPayload(user="user_4", card=str(game_with_decks_ending.state.decks["user_4"][0]))
+    payload_1 = RoundPayload(user="user_1", card=str(game_with_decks_ending.state.decks["user_1"][0]))
     game_with_decks_ending.dispatch(payload=payload_2)
     game_with_decks_ending.dispatch(payload=payload_3)
     game_with_decks_ending.dispatch(payload=payload_4)

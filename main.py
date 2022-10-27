@@ -12,7 +12,13 @@ from src.data_access.game import GameDataAccess
 from src.data_access.lobby import LobbyDataAccess
 from src.data_access.user import UserDataAccess
 from src.enums.websocket import Action, PayloadType, RouteKey
-from src.schemas.websocket import CreateLobbyPayload, GetGameDetailPayload, JoinLobbyPayload, LeaveLobbyPayload
+from src.schemas.websocket import (
+    CreateLobbyPayload,
+    GetGameDetailPayload,
+    JoinLobbyPayload,
+    LeaveLobbyPayload,
+    MakeMovePayload,
+)
 from src.services.exceptions import ServiceException
 from src.services.game import GameService
 from src.services.websocket import WebsocketHandler
@@ -112,6 +118,12 @@ def main_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any
         elif action == Action.GET_GAME_DETAIL:
             payload = GetGameDetailPayload(**payload)
             game = websocket_handler.get_game_detail(payload=payload, user_id=user_id)
+            websocket_handler.send_game_detail_to_connection(game=game, user_id=user_id, connection_id=connection_id)
+
+        elif action == Action.MAKE_MOVE.value:
+            payload = MakeMovePayload(**payload)
+            game = websocket_handler.make_move(payload=payload, user_id=user_id)
+
             websocket_handler.send_game_detail_to_connection(game=game, user_id=user_id, connection_id=connection_id)
 
         else:

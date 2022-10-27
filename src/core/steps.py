@@ -4,7 +4,7 @@ from typing import Optional, Type
 from pydantic import Field
 
 from src.core.abstract import GameStep
-from src.core.cards import Card
+from src.core.cards import CARD_MAPPING, Card
 from src.core.consts import USER
 from src.core.exceptions import InvalidPayloadBody
 from src.core.mixins import RoundDispatchPayloadMixin, RoundPayloadValidationMixin
@@ -87,7 +87,7 @@ class FirstRoundStep(RoundPayloadValidationMixin, RoundDispatchPayloadMixin, Gam
 
     def on_start(self) -> GameState:
         first_user, card = get_first_user_card_tuple(decks=self.game_state.decks)
-        payload = RoundPayload(user=first_user, card=card)
+        payload = RoundPayload(user=first_user, card=str(card))
         return self.dispatch_payload(payload=payload)
 
     @property
@@ -115,12 +115,13 @@ class CardExchangeStep(GameStep):
         if payload.user in self.local_state:
             raise InvalidPayloadBody(f"User {payload.user} has already declared cards for exchange")
 
-        for card in payload.cards:
+        for card_str in payload.cards:
+            card = CARD_MAPPING[card_str]
             if card not in self.game_state.decks[payload.user]:
                 raise InvalidPayloadBody(f"User {payload.user} does not have card {card}")
 
     def dispatch_payload(self, payload: CardExchangePayload) -> GameState:
-        self.local_state.cards_to_exchange[payload.user] = payload.cards
+        self.local_state.cards_to_exchange[payload.user] = [CARD_MAPPING[card_str] for card_str in payload.cards]
         if len(self.local_state.cards_to_exchange) == len(self.game_state.users):
             new_state = self.game_state.copy(deep=True)
             new_state.decks = self._get_decks_with_cards_exchanged()
@@ -160,6 +161,6 @@ class CardExchangeStep(GameStep):
         return not self.local_state.cards_to_exchange
 
 
-step_mapping: dict[str, Type[GameStep]] = {
+STEP_MAPPING: dict[str, Type[GameStep]] = {
     step.__name__: step for step in (CardExchangeStep, FirstRoundStep, InProgressStep, FinishedStep)
 }

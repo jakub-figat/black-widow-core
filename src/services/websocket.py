@@ -3,7 +3,6 @@ from typing import Any, Optional
 
 from mypy_boto3_apigateway.client import APIGatewayClient
 
-from src.data_access.exceptions import DoesNotExist
 from src.data_access.game import GameDataAccess
 from src.data_access.lobby import LobbyDataAccess
 from src.data_access.user import UserDataAccess
@@ -18,8 +17,8 @@ from src.schemas.websocket import (
     GetGameDetailPayload,
     JoinLobbyPayload,
     LeaveLobbyPayload,
+    MakeMovePayload,
 )
-from src.services.exceptions import GameServiceException
 from src.services.game import GameService
 from src.utils import DateTimeJSONEncoder
 
@@ -78,7 +77,7 @@ class WebsocketHandler:
         self.send_to_connection(
             body={
                 "type": PayloadType.LOBBIES_LIST.value,
-                "lobbies": [lobby.dict() for lobby in lobbies],
+                "lobbies": [lobby.dict(by_alias=True) for lobby in lobbies],
             },
             connection_id=connection_id,
         )
@@ -87,7 +86,8 @@ class WebsocketHandler:
         for user in users:
             for connection_id in user.connection_ids:
                 self.send_to_connection(
-                    body={"type": PayloadType.LOBBY_UPDATED.value, "lobby": lobby.dict()}, connection_id=connection_id
+                    body={"type": PayloadType.LOBBY_UPDATED.value, "lobby": lobby.dict(by_alias=True)},
+                    connection_id=connection_id,
                 )
 
     def send_lobby_deleted_to_users(self, *, users: list[UserModel], lobby_id: str) -> None:
@@ -101,7 +101,7 @@ class WebsocketHandler:
         self.send_to_connection(
             body={
                 "type": PayloadType.GAMES_LIST.value,
-                "games": [GamePreviewSchema.from_game(game=game).dict() for game in games],
+                "games": [GamePreviewSchema.from_game(game=game).dict(by_alias=True) for game in games],
             },
             connection_id=connection_id,
         )
@@ -125,10 +125,34 @@ class WebsocketHandler:
         self.send_to_connection(
             body={
                 "type": PayloadType.GAME_DETAIL,
-                "game": GameDetailSchema.from_game(game=game, user_id=user_id).dict(),
+                "game": GameDetailSchema.from_game(game=game, user_id=user_id).dict(by_alias=True),
             },
             connection_id=connection_id,
         )
+
+    def send_game_detail_updated_to_users(self, *, game: GameModel) -> None:
+        for user_id in game.game.state.users:
+            user = self.user_data_access.get(pk="user", sk=f"user#{user_id}")
+            for connection_id in user.connection_ids:
+                self.send_to_connection(
+                    body={
+                        "type": PayloadType.GAME_DETAIL_UPDATED.value,
+                        "game": GameDetailSchema.from_game(game=game, user_id=user_id).dict(by_alias=True),
+                    },
+                    connection_id=connection_id,
+                )
+
+    def send_game_detail_deleted_to_users(self, *, game: GameModel) -> None:
+        for user_id in game.game.state.users:
+            user = self.user_data_access.get(pk="user", sk=f"user#{user_id}")
+            for connection_id in user.connection_ids:
+                self.send_to_connection(
+                    body={
+                        "type": PayloadType.GAME_DETAIL_DELETED.value,
+                        "gameId": game.game_id,
+                    },
+                    connection_id=connection_id,
+                )
 
     def create_lobby(self, *, payload: CreateLobbyPayload, user_id: str) -> LobbyModel:
         user = self.user_data_access.get(pk="user", sk=f"user#{user_id}")
@@ -145,5 +169,6 @@ class WebsocketHandler:
     def get_game_detail(self, *, payload: GetGameDetailPayload, user_id: str) -> GameModel:
         return self.game_service.get_game_with_user(game_id=payload.game_id, user_id=user_id)
 
-    def handle_user_send_game_payload(self) -> None:
-        pass
+    def make_move(self, *, payload: MakeMovePayload, user_id: str) -> GameModel:
+        user = self.user_data_access.get(pk="user", sk=f"user#{user_id}")
+        return self.game_service.dispatch_game_action(game_id=payload.game_id, payload=payload.game_payload, user=user)

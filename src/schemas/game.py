@@ -1,7 +1,7 @@
 from typing import Any
 
 from src.core.game import Game
-from src.core.steps import step_mapping
+from src.core.steps import STEP_MAPPING
 from src.schemas.base import DynamoDBBaseModel
 
 
@@ -17,7 +17,7 @@ class GameModel(DynamoDBBaseModel):
     @classmethod
     def from_item(cls, item: dict[str, Any]) -> "GameModel":
         current_step_data = item["game"].pop("current_step")
-        step_instance = step_mapping[item["game_step"]](**current_step_data)
+        step_instance = STEP_MAPPING[item["game_step"]](**current_step_data)
         return cls(
             game_id=item["SK"].split("#")[-1],
             game=Game(**item["game"], current_step=step_instance),

@@ -94,11 +94,17 @@ class GameService:
 
         return game
 
-    def dispatch_game_action(self, game_id: str, user: UserModel, payload: dict[str, Any]) -> None:
+    def dispatch_game_action(self, game_id: str, user: UserModel, payload: dict[str, Any]) -> GameModel:
         game_model = self.game_data_access.get(pk=f"game", sk=f"game#{game_id}")
         if game_model is None:
             raise DoesNotExist(f"Game with id {game_id} does not exist")
+
+        if user.email not in game_model.game.state.users:
+            raise GameServiceException(f"You do not participate in game {game_id}")
+
         payload = game_model.game.current_step.payload_class(**payload, user=user.email)
         game_model.game.dispatch(payload=payload)
+        # TODO error handling, camel case game schema
 
         self.game_data_access.save(model=game_model)
+        return game_model

@@ -136,3 +136,5 @@ ALL_CARDS = [
     HEART_KING,
     HEART_ACE,
 ]
+
+CARD_MAPPING = {f"{card.suit}_{card.value}": card for card in ALL_CARDS}

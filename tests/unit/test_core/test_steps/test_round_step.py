@@ -60,17 +60,17 @@ def game_state_with_current_player_round_when_everyone_has_one_suit() -> GameSta
 @pytest.mark.parametrize(
     "payload,local_state",
     [
-        (RoundPayload(user="user_1", card=cards.SPADE_5), RoundState()),  # user does not have a card
+        (RoundPayload(user="user_1", card=str(cards.SPADE_5)), RoundState()),  # user does not have a card
         (
-            RoundPayload(user="user_2", card=cards.CLUB_4),
+            RoundPayload(user="user_2", card=str(cards.CLUB_4)),
             RoundState(cards_on_table={"user_2": cards.CLUB_4}),
         ),  # card is already on table
         (
-            RoundPayload(user="user_2", card=cards.CLUB_3),
+            RoundPayload(user="user_2", card=str(cards.CLUB_3)),
             RoundState(cards_on_table={"user_1": cards.HEART_4}, table_suit=CardSuit.HEART),
         ),  # suit does not match table's suit
         (
-            RoundPayload(user="user_1", card=cards.HEART_5),
+            RoundPayload(user="user_1", card=str(cards.HEART_5)),
             RoundState(),
         ),  # user tries to put heart while having other suits in deck
     ],
@@ -103,7 +103,7 @@ def test_first_round_step_on_start_method(game_state_with_first_round: GameState
 def test_dispatch_payload_when_first_card_is_on_table(game_state_with_first_round: GameState) -> None:
     step = FirstRoundStep(game_state=game_state_with_first_round)
     step.on_start()
-    new_state = step.dispatch_payload(payload=RoundPayload(user="user_3", card=cards.HEART_QUEEN))
+    new_state = step.dispatch_payload(payload=RoundPayload(user="user_3", card=str(cards.HEART_QUEEN)))
 
     assert new_state != game_state_with_first_round
     assert step.local_state.table_suit == CardSuit.CLUB
@@ -121,10 +121,10 @@ def test_dispatch_payload_when_first_card_is_on_table(game_state_with_first_roun
 def test_dispatch_payload_when_last_card_is_being_put(game_state_with_current_player: GameState) -> None:
     step = InProgressStep(game_state=game_state_with_current_player)
 
-    step.dispatch_payload(payload=RoundPayload(user="user_3", card=cards.HEART_QUEEN))
-    step.dispatch_payload(payload=RoundPayload(user="user_4", card=cards.DIAMOND_3))
-    step.dispatch_payload(payload=RoundPayload(user="user_1", card=cards.HEART_5))
-    new_state = step.dispatch_payload(payload=RoundPayload(user="user_2", card=cards.HEART_7))
+    step.dispatch_payload(payload=RoundPayload(user="user_3", card=str(cards.HEART_QUEEN)))
+    step.dispatch_payload(payload=RoundPayload(user="user_4", card=str(cards.DIAMOND_3)))
+    step.dispatch_payload(payload=RoundPayload(user="user_1", card=str(cards.HEART_5)))
+    new_state = step.dispatch_payload(payload=RoundPayload(user="user_2", card=str(cards.HEART_7)))
 
     assert new_state != game_state_with_current_player
     assert step.local_state.table_suit == CardSuit.HEART
@@ -145,10 +145,10 @@ def test_dispatch_payload_when_everyone_has_card_of_given_suit(
 ) -> None:
     step = InProgressStep(game_state=game_state_with_current_player_round_when_everyone_has_one_suit)
 
-    step.dispatch_payload(payload=RoundPayload(user="user_3", card=cards.SPADE_4))
-    step.dispatch_payload(payload=RoundPayload(user="user_4", card=cards.SPADE_JACK))
-    step.dispatch_payload(payload=RoundPayload(user="user_1", card=cards.SPADE_QUEEN))
-    new_state = step.dispatch_payload(payload=RoundPayload(user="user_2", card=cards.SPADE_KING))
+    step.dispatch_payload(payload=RoundPayload(user="user_3", card=str(cards.SPADE_4)))
+    step.dispatch_payload(payload=RoundPayload(user="user_4", card=str(cards.SPADE_JACK)))
+    step.dispatch_payload(payload=RoundPayload(user="user_1", card=str(cards.SPADE_QUEEN)))
+    new_state = step.dispatch_payload(payload=RoundPayload(user="user_2", card=str(cards.SPADE_KING)))
 
     assert new_state != game_state_with_current_player_round_when_everyone_has_one_suit
     assert step.local_state.table_suit == CardSuit.SPADE

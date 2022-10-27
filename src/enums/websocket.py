@@ -29,3 +29,4 @@ class PayloadType(str, Enum):
     GAME_DELETED = "gameDeleted"
     GAME_DETAIL = "gameDetail"
     GAME_DETAIL_UPDATED = "gameDetailUpdated"
+    GAME_DETAIL_DELETED = "gameDetailDeleted"

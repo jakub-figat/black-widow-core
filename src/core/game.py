@@ -1,22 +1,23 @@
 import logging
 from typing import Union
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from src.core.abstract import GameStateAsyncStore, GameStateStore, GameStep
 from src.core.consts import USER
 from src.core.exceptions import NoStoreSet
+from src.core.schemas import BaseSchema
 from src.core.state import GameState
 from src.core.steps import CardExchangeStep, FinishedStep
 from src.core.types import Payload
 
 
-class GameSettings(BaseModel):
+class GameSettings(BaseSchema):
     max_score: int = Field(default=100, gt=0)
     timeout: int = Field(default=60, gt=30)
 
 
-class Game(BaseModel):
+class Game(BaseSchema):
     settings: GameSettings
     state: GameState
     current_step: GameStep

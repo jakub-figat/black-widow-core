@@ -7,6 +7,7 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from mypy_boto3_apigateway.client import APIGatewayClient
 from pydantic import ValidationError
 
+from src.core.exceptions import GameError
 from src.data_access.exceptions import DataAccessException
 from src.data_access.game import GameDataAccess
 from src.data_access.lobby import LobbyDataAccess
@@ -136,9 +137,12 @@ def main_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any
         websocket_handler.send_to_connection(body=get_response_from_pydantic_error(exc), connection_id=connection_id)
         return {"statusCode": 400}
 
-    except (DataAccessException, ServiceException) as exc:
+    except (DataAccessException, ServiceException, GameError) as exc:
         websocket_handler.send_to_connection(
             body={"type": PayloadType.ERROR.value, "detail": str(exc)}, connection_id=connection_id
         )
 
     return {"statusCode": 200}
+
+
+# TODO: camel case game schemas, game error handling, step switching in dynamodb

@@ -98,7 +98,9 @@ def test_game_service_dispatch_game_action_after_game_begins(game_service: GameS
     game_before = game_model.game
     game_service.game_data_access.save(model=game_model)
     user_cards = game_model.game.state.decks[user.email][:3]
-    game_service.dispatch_game_action(user=user, game_id=game_model.game_id, payload={"cards": user_cards})
+    game_service.dispatch_game_action(
+        user=user, game_id=game_model.game_id, payload={"cards": [str(card) for card in user_cards]}
+    )
 
     game_model = game_service.game_data_access.get(**game_model.key)
 

@@ -104,7 +104,7 @@ class GameService:
 
         payload = game_model.game.current_step.payload_class(**payload, user=user.email)
         game_model.game.dispatch(payload=payload)
-        # TODO error handling, camel case game schema
+        game_model.game_step = game_model.game.current_step.__class__.__name__
 
         self.game_data_access.save(model=game_model)
         return game_model

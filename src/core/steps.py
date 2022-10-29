@@ -139,6 +139,8 @@ class CardExchangeStep(GameStep):
 
         for user, cards_to_exchange in self.local_state.cards_to_exchange.items():
             for card in cards_to_exchange:
+                print(new_decks[user])
+                print(card, card.score)
                 new_decks[user].remove(card)
                 new_decks[from_to_mapping[user]].append(card)
 

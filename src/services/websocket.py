@@ -110,7 +110,10 @@ class WebsocketHandler:
         for user in users:
             for connection_id in user.connection_ids:
                 self.send_to_connection(
-                    body={"type": PayloadType.GAME_UPDATED, "game": GamePreviewSchema.from_game(game=game)},
+                    body={
+                        "type": PayloadType.GAME_UPDATED,
+                        "game": GamePreviewSchema.from_game(game=game).dict(by_alias=True),
+                    },
                     connection_id=connection_id,
                 )
 

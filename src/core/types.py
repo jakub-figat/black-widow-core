@@ -1,13 +1,14 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import Field, validator
 
 from src.core.cards import CARD_MAPPING, Card
 from src.core.consts import USER
 from src.core.enums import CardSuit
+from src.core.schemas import BaseSchema
 
 
-class Payload(BaseModel):
+class Payload(BaseSchema):
     user: USER
 
 
@@ -38,14 +39,14 @@ class FinishedPayload(Payload):
     pass
 
 
-class CardExchangeState(BaseModel):
+class CardExchangeState(BaseSchema):
     cards_to_exchange: dict[USER, list[Card]] = Field(default_factory=dict)
 
 
-class RoundState(BaseModel):
+class RoundState(BaseSchema):
     cards_on_table: dict[USER, Card] = Field(default_factory=dict)
     table_suit: Optional[CardSuit] = None
 
 
-class FinishedState(BaseModel):
+class FinishedState(BaseSchema):
     users_ready: set = Field(default_factory=set)

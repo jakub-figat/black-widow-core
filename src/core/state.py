@@ -4,10 +4,11 @@ from pydantic import BaseModel
 
 from src.core.cards import Card
 from src.core.consts import USER
+from src.core.schemas import BaseSchema
 from src.core.utils import get_initial_decks, get_initial_scores
 
 
-class GameState(BaseModel):
+class GameState(BaseSchema):
     current_user: Optional[USER] = None
     users: list[USER]
     scores: dict[USER, int]

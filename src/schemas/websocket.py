@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 from src.core.cards import Card
 from src.core.consts import USER
-from src.core.game import Game, GameSettings
+from src.core.game import GameSettings
 from src.core.steps import STEP_MAPPING, CardExchangeStep
 from src.core.types import CardExchangeState
 from src.schemas.base import BaseSchema
@@ -59,6 +59,7 @@ class GameDetailSchema(BaseSchema):
     game_settings: GameSettings
     state: GameDetailState
     current_step: GameDetailStep
+    step_name: str
 
     @classmethod
     def from_game(cls, game: GameModel, user_id: str) -> "GameDetailSchema":
@@ -67,9 +68,12 @@ class GameDetailSchema(BaseSchema):
         obfuscated_state = GameDetailState(**state_dict)
 
         obfuscated_step = None
-        if isinstance(STEP_MAPPING[game.game_step], CardExchangeStep):
+        if issubclass(STEP_MAPPING[game.game_step], CardExchangeStep):
             local_state_dict = game.game.current_step.local_state.dict()
-            local_state_dict["cards_to_exchange"] = local_state_dict.pop("cards_to_exchange")[user_id]
+            obfuscated_cards_to_exchange = {
+                user: cards for user, cards in local_state_dict["cards_to_exchange"].items() if user == user_id
+            }
+            local_state_dict["cards_to_exchange"] = obfuscated_cards_to_exchange
             obfuscated_step = GameDetailStep(local_state=CardExchangeState(**local_state_dict))
 
         return cls(
@@ -77,4 +81,5 @@ class GameDetailSchema(BaseSchema):
             game_settings=game.game.settings,
             state=obfuscated_state,
             current_step=obfuscated_step or game.game.current_step,
+            step_name=game.game_step,
         )

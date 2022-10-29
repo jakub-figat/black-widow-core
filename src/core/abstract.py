@@ -4,13 +4,14 @@ from typing import Any, Optional, Type
 from pydantic import BaseModel
 
 from src.core.exceptions import InvalidPayloadType, InvalidUser
+from src.core.schemas import BaseSchema
 from src.core.state import GameState
 from src.core.types import Payload
 
 
-class GameStep(BaseModel, ABC):
+class GameStep(BaseSchema, ABC):
     game_state: GameState
-    local_state: BaseModel
+    local_state: BaseSchema
 
     def validate_payload(self, payload: Payload) -> None:
         """

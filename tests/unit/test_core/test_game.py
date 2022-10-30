@@ -28,7 +28,7 @@ def game_with_first_round() -> Game:
             "user_1": [cards.CLUB_KING],
             "user_2": [cards.SPADE_4],
             "user_3": [cards.HEART_5],
-            "user_4": [cards.CLUB_KING],
+            "user_4": [cards.CLUB_7],
         },
         current_user="user_4",
         scores={"user_1": 0, "user_2": 0, "user_3": 0, "user_4": 0},

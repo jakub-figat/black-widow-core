@@ -1,7 +1,9 @@
+import datetime as dt
 from typing import Any, Optional
 from uuid import uuid4
 
 from src.core.game import Game
+from src.core.steps import FinishedStep
 from src.data_access.exceptions import DoesNotExist
 from src.data_access.game import GameDataAccess
 from src.data_access.lobby import LobbyDataAccess
@@ -102,9 +104,15 @@ class GameService:
         if user.email not in game_model.game.state.users:
             raise GameServiceException(f"You do not participate in game {game_id}")
 
+        if game_model.game_step == FinishedStep.__name__:
+            raise GameServiceException(f"Game with id {game_id} is already finished")
+
         payload = game_model.game.current_step.payload_class(**payload, user=user.email)
         game_model.game.dispatch(payload=payload)
         game_model.game_step = game_model.game.current_step.__class__.__name__
+
+        if game_model.game_step == FinishedStep.__name__:
+            game_model.finished_at = dt.datetime.utcnow().timestamp()
 
         self.game_data_access.save(model=game_model)
         return game_model

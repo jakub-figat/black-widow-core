@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from src.core.game import Game
 from src.core.steps import STEP_MAPPING
@@ -9,6 +9,7 @@ class GameModel(DynamoDBBaseModel):
     game_id: str
     game: Game
     game_step: str
+    finished_at: Optional[int] = None  # datetime converted to seconds from epoch
 
     def __init__(self, **kwargs) -> None:
         game_step = kwargs["game"].current_step.__class__.__name__
@@ -21,6 +22,7 @@ class GameModel(DynamoDBBaseModel):
         return cls(
             game_id=item["SK"].split("#")[-1],
             game=Game(**item["game"], current_step=step_instance),
+            finished_at=item["finished_at"],
         )
 
     def to_item(self) -> dict[str, Any]:

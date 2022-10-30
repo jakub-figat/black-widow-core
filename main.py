@@ -143,6 +143,3 @@ def main_handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any
         )
 
     return {"statusCode": 200}
-
-
-# TODO: camel case game schemas, game error handling, step switching in dynamodb

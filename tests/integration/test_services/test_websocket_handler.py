@@ -95,6 +95,29 @@ def game_with_first_round() -> Game:
 
 
 @pytest.fixture
+def game_with_last_round() -> Game:
+    settings = GameSettings()
+    users = ["test@test.com", "test2@test.com", "test3@test.com"]
+    state = GameState(
+        users=users,
+        decks={
+            "test@test.com": [],
+            "test2@test.com": [],
+            "test3@test.com": [cards.HEART_4],
+        },
+        current_user="test3@test.com",
+        scores={"test@test.com": 0, "test2@test.com": 0, "test3@test.com": 97},
+    )
+    step = InProgressStep(
+        game_state=state,
+        local_state=RoundState(
+            cards_on_table={"test@test.com": cards.HEART_2, "test2@test.com": cards.HEART_3}, table_suit=CardSuit.HEART
+        ),
+    )
+    return Game(settings=settings, state=state, current_step=step)
+
+
+@pytest.fixture
 def game_with_finished_step() -> Game:
     settings = GameSettings()
     users = ["test@test.com", "test2@test.com", "test3@test.com"]
@@ -115,25 +138,6 @@ def game_with_finished_step() -> Game:
 
 
 @pytest.fixture
-def game_model_finished(
-    websocket_handler: WebsocketHandler,
-    game_with_finished_step: Game,
-    user: UserModel,
-    user_2: UserModel,
-    user_3: UserModel,
-) -> GameModel:
-    game_model = GameModel(game_id=str(uuid4()), game=game_with_finished_step)
-    user.games_ids.append("game_finished")
-    user_2.games_ids.append("game_finished")
-    user_3.games_ids.append("game_finished")
-
-    websocket_handler.user_data_access.bulk_save(models=[user, user_2, user_3])
-    websocket_handler.game_data_access.save(model=game_model)
-
-    return game_model
-
-
-@pytest.fixture
 def game_model_first_round(
     websocket_handler: WebsocketHandler,
     game_with_first_round: Game,
@@ -142,9 +146,47 @@ def game_model_first_round(
     user_3: UserModel,
 ) -> GameModel:
     game_model = GameModel(game_id=str(uuid4()), game=game_with_first_round)
-    user.games_ids.append("game_first_round")
-    user_2.games_ids.append("game_first_round")
-    user_3.games_ids.append("game_first_round")
+    user.games_ids.append(game_model.game_id)
+    user_2.games_ids.append(game_model.game_id)
+    user_3.games_ids.append(game_model.game_id)
+
+    websocket_handler.user_data_access.bulk_save(models=[user, user_2, user_3])
+    websocket_handler.game_data_access.save(model=game_model)
+
+    return game_model
+
+
+@pytest.fixture
+def game_model_last_round(
+    websocket_handler: WebsocketHandler,
+    game_with_last_round: Game,
+    user: UserModel,
+    user_2: UserModel,
+    user_3: UserModel,
+) -> GameModel:
+    game_model = GameModel(game_id=str(uuid4()), game=game_with_last_round)
+    user.games_ids.append(game_model.game_id)
+    user_2.games_ids.append(game_model.game_id)
+    user_3.games_ids.append(game_model.game_id)
+
+    websocket_handler.user_data_access.bulk_save(models=[user, user_2, user_3])
+    websocket_handler.game_data_access.save(model=game_model)
+
+    return game_model
+
+
+@pytest.fixture
+def game_model_finished(
+    websocket_handler: WebsocketHandler,
+    game_with_finished_step: Game,
+    user: UserModel,
+    user_2: UserModel,
+    user_3: UserModel,
+) -> GameModel:
+    game_model = GameModel(game_id=str(uuid4()), game=game_with_finished_step)
+    user.games_ids.append(game_model.game_id)
+    user_2.games_ids.append(game_model.game_id)
+    user_3.games_ids.append(game_model.game_id)
 
     websocket_handler.user_data_access.bulk_save(models=[user, user_2, user_3])
     websocket_handler.game_data_access.save(model=game_model)
@@ -293,4 +335,14 @@ def test_websocket_handler_make_move_with_game_finished(
         )
 
 
-# test when game finishes, check if finished_at is set correctly, empty set error
+def test_websocket_handler_make_move_in_last_round(
+    websocket_handler: WebsocketHandler, game_model_last_round: GameModel, user_3: UserModel
+) -> None:
+    game_model = websocket_handler.make_move(
+        payload=MakeMovePayload(game_id=game_model_last_round.game_id, game_payload={"card": str(cards.HEART_4)}),
+        user_id=user_3.email,
+    )
+
+    assert game_model.game.is_finished is True
+    assert game_model.game_step == FinishedStep.__name__
+    assert game_model.finished_at is not None

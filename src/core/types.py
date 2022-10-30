@@ -49,4 +49,4 @@ class RoundState(BaseSchema):
 
 
 class FinishedState(BaseSchema):
-    users_ready: set = Field(default_factory=set)
+    users_ready: list[str] = Field(default_factory=list)

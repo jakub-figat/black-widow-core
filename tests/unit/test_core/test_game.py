@@ -28,7 +28,7 @@ def game_with_first_round() -> Game:
             "user_1": [cards.CLUB_KING],
             "user_2": [cards.SPADE_4],
             "user_3": [cards.HEART_5],
-            "user_4": [cards.CLUB_7],
+            "user_4": [cards.DIAMOND_ACE],
         },
         current_user="user_4",
         scores={"user_1": 0, "user_2": 0, "user_3": 0, "user_4": 0},
@@ -132,8 +132,8 @@ def test_place_card_in_first_round(game_with_first_round: Game) -> None:
     game_with_first_round.dispatch(payload=payload)
 
     assert isinstance(game_with_first_round.current_step, InProgressStep)
-    assert game_with_first_round.state.scores["user_4"] == 13
-    assert game_with_first_round.state.current_user == "user_4"
+    assert game_with_first_round.state.scores["user_3"] == 13
+    assert game_with_first_round.state.current_user == "user_3"
     assert game_with_first_round.state.decks == {
         "user_1": [cards.CLUB_KING],
         "user_2": [cards.SPADE_4],

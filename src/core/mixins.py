@@ -20,11 +20,14 @@ class RoundPayloadValidationMixin:
         if card in self.local_state.cards_on_table.values():
             raise InvalidPayloadBody(f"Cannot place card {payload.card}, since it is already on table")
 
-        if card.suit == CardSuit.HEART and not check_if_user_has_only_one_suit(
-            deck=self.game_state.decks[payload.user]
+        if (
+            len(self.local_state.cards_on_table) == 0
+            and card.suit == CardSuit.HEART
+            and not check_if_user_has_only_one_suit(deck=self.game_state.decks[payload.user])
         ):
             raise InvalidPayloadBody(
-                f"User {payload.user} tried to place heart suit despite having at least one more suit on deck"
+                f"User {payload.user} tried to place heart suit as first card "
+                f"despite having at least one more suit on deck"
             )
 
         if (suit := self.local_state.table_suit) is not None:
@@ -49,7 +52,11 @@ class RoundDispatchPayloadMixin:
         # TODO: bug, score collecting is wrong if suit does not match
         if len(self.local_state.cards_on_table) == len(self.game_state.users):
             cards_on_table = self.local_state.cards_on_table
-            user_collecting_score = max(cards_on_table, key=lambda user: cards_on_table[user].value)
+
+            user_collecting_score = max(
+                (user for user, card in cards_on_table.items() if card.suit == self.local_state.table_suit),
+                key=lambda user: cards_on_table[user].value,
+            )
             new_state.scores[user_collecting_score] += count_points_for_cards(deck=cards_on_table.values())
             new_state.current_user = user_collecting_score
             self.local_state.cards_on_table = {}

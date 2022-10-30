@@ -64,14 +64,14 @@ def test_finished_step_when_nobody_claimed_readiness(
 @pytest.mark.parametrize(
     "payload,state",
     [
-        (FinishedPayload(user="user_2"), FinishedState(users_ready={"user_1", "user_2"})),
-        (FinishedPayload(user="user_3"), FinishedState(users_ready={"user_1", "user_3"})),
+        (FinishedPayload(user="user_2"), FinishedState(users_ready=["user_1", "user_2"])),
+        (FinishedPayload(user="user_3"), FinishedState(users_ready=["user_1", "user_3"])),
     ],
 )
 def test_finished_step_when_someone_claimed_readiness(
     payload: FinishedPayload, state: FinishedState, game_state_with_round_finished: GameState
 ) -> None:
-    step = FinishedStep(game_state=game_state_with_round_finished, local_state=FinishedState(users_ready={"user_1"}))
+    step = FinishedStep(game_state=game_state_with_round_finished, local_state=FinishedState(users_ready=["user_1"]))
     new_state = step.dispatch_payload(payload)
 
     assert new_state == game_state_with_round_finished
@@ -81,7 +81,7 @@ def test_finished_step_when_someone_claimed_readiness(
 def test_finished_step_when_everyone_is_ready(game_state_with_round_finished: GameState) -> None:
     step = FinishedStep(
         game_state=game_state_with_round_finished,
-        local_state=FinishedState(users_ready={"user_1", "user_2", "user_3"}),
+        local_state=FinishedState(users_ready=["user_1", "user_2", "user_3"]),
     )
     new_state = step.dispatch_payload(payload=FinishedPayload(user="user_4"))
 

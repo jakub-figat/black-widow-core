@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any, Optional
 
 from src.core.game import Game
@@ -9,7 +10,7 @@ class GameModel(DynamoDBBaseModel):
     game_id: str
     game: Game
     game_step: str
-    finished_at: Optional[int] = None  # datetime converted to seconds from epoch
+    finished_at: Optional[Decimal] = None  # datetime converted to seconds from epoch
 
     def __init__(self, **kwargs) -> None:
         game_step = kwargs["game"].current_step.__class__.__name__

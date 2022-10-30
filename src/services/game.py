@@ -1,4 +1,5 @@
 import datetime as dt
+from decimal import Decimal
 from typing import Any, Optional
 from uuid import uuid4
 
@@ -112,7 +113,7 @@ class GameService:
         game_model.game_step = game_model.game.current_step.__class__.__name__
 
         if game_model.game_step == FinishedStep.__name__:
-            game_model.finished_at = dt.datetime.utcnow().timestamp()
+            game_model.finished_at = Decimal(dt.datetime.utcnow().timestamp())
 
         self.game_data_access.save(model=game_model)
         return game_model

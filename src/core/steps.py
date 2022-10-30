@@ -30,7 +30,7 @@ class FinishedStep(GameStep):
             raise InvalidPayloadBody(f"User {payload.user} has already declared readiness.")
 
     def dispatch_payload(self, payload: FinishedPayload) -> GameState:
-        self.local_state.users_ready.add(payload.user)
+        self.local_state.users_ready.append(payload.user)
         if len(self.local_state.users_ready) == len(self.game_state.users):
             new_state = self.game_state.copy(deep=True)
             new_state = GameState.from_state(game_state=new_state)

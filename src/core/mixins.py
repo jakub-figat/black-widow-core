@@ -49,7 +49,6 @@ class RoundDispatchPayloadMixin:
 
         self.local_state.cards_on_table[payload.user] = card
         new_state = self.game_state.copy(deep=True)
-        # TODO: bug, score collecting is wrong if suit does not match
         if len(self.local_state.cards_on_table) == len(self.game_state.users):
             cards_on_table = self.local_state.cards_on_table
 

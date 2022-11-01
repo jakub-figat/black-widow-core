@@ -6,7 +6,7 @@ import pytest
 
 from src.core import cards
 from src.core.enums import CardSuit
-from src.core.exceptions import InvalidPayloadBody
+from src.core.exceptions import GameError, InvalidPayloadBody
 from src.core.state import GameState
 from src.core.steps import FirstRoundStep, InProgressStep
 from src.core.types import RoundPayload, RoundState
@@ -54,6 +54,36 @@ def game_state_with_current_player_round_when_everyone_has_one_suit() -> GameSta
             "user_4": [cards.SPADE_JACK],
         },
         current_user="user_3",
+    )
+
+
+@pytest.fixture
+def game_state_with_current_player_round_when_two_players_do_not_have_matching_suit() -> GameState:
+    return GameState(
+        users=["user_1", "user_2", "user_3", "user_4"],
+        scores=get_initial_scores(users=["user_1", "user_2", "user_3", "user_4"]),
+        decks={
+            "user_1": [cards.DIAMOND_3],
+            "user_2": [cards.HEART_KING],
+            "user_3": [cards.HEART_QUEEN],
+            "user_4": [cards.HEART_10],
+        },
+        current_user="user_4",
+    )
+
+
+@pytest.fixture
+def game_state_with_current_player_round_when_player_have_more_than_heart_suit() -> GameState:
+    return GameState(
+        users=["user_1", "user_2", "user_3", "user_4"],
+        scores=get_initial_scores(users=["user_1", "user_2", "user_3", "user_4"]),
+        decks={
+            "user_1": [cards.DIAMOND_3, cards.HEART_5],
+            "user_2": [],
+            "user_3": [],
+            "user_4": [],
+        },
+        current_user="user_1",
     )
 
 
@@ -162,3 +192,35 @@ def test_dispatch_payload_when_everyone_has_card_of_given_suit(
     assert new_state.current_user == "user_2"
     assert new_state.scores == {"user_1": 0, "user_2": 23, "user_3": 0, "user_4": 0}
     assert step.should_switch_to_next_step
+
+
+def test_dispatch_payload_when_other_players_suits_do_not_match(
+    game_state_with_current_player_round_when_two_players_do_not_have_matching_suit: GameState,
+) -> None:
+    step = InProgressStep(game_state=game_state_with_current_player_round_when_two_players_do_not_have_matching_suit)
+
+    step.dispatch_payload(payload=RoundPayload(user="user_1", card=str(cards.DIAMOND_3)))
+    step.dispatch_payload(payload=RoundPayload(user="user_2", card=str(cards.HEART_KING)))
+    step.dispatch_payload(payload=RoundPayload(user="user_3", card=str(cards.HEART_QUEEN)))
+    new_state = step.dispatch_payload(payload=RoundPayload(user="user_4", card=str(cards.HEART_10)))
+
+    assert new_state != game_state_with_current_player_round_when_two_players_do_not_have_matching_suit
+    assert step.local_state.table_suit == CardSuit.DIAMOND
+    assert not step.local_state.cards_on_table
+    assert new_state.decks == {
+        "user_1": [],
+        "user_2": [],
+        "user_3": [],
+        "user_4": [],
+    }
+    assert new_state.current_user == "user_1"
+    assert new_state.scores == {"user_1": 3, "user_2": 0, "user_3": 0, "user_4": 0}
+    assert step.should_switch_to_next_step
+
+
+def test_dispatch_payload_when_player_tries_to_put_heart_first_and_has_other_suit(
+    game_state_with_current_player_round_when_player_have_more_than_heart_suit: GameState,
+) -> None:
+    step = InProgressStep(game_state=game_state_with_current_player_round_when_player_have_more_than_heart_suit)
+    with pytest.raises(InvalidPayloadBody):
+        step.validate_payload(payload=RoundPayload(user="user_1", card=str(cards.HEART_5)))
